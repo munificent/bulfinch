@@ -81,8 +81,14 @@ public class VM {
         // Store the result value in the register set by the caller's CALL
         // instruction.
         // - 1 because we've already advanced past the CALL.
-        int register = caller.stackStart + caller.function.code.get(caller.ip - 1).a;
-        mStack.set(register, result);
+        int dest = caller.function.code.get(caller.ip - 1).a;
+        
+        // If the destination register is -1 that means it's result is being
+        // discarded, so don't store anything.
+        if (dest != -1) {
+          int register = caller.stackStart + dest;
+          mStack.set(register, result);
+        }
         trace("RETURN", op.a);
         break;
       }

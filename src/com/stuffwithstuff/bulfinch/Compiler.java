@@ -48,6 +48,14 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     return mFunction;
   }
 
+  /**
+   * This special register means that we don't care about the result value. It
+   * is used as the destination for all but the last expression in a sequence.
+   * Other expression types will check for this and omit work if they know it
+   * isn't needed because the result will be ignored anyway.
+   */
+  private static final int DISCARD = -1;
+  
   @Override
   public Integer visit(AssignExpr expr, Integer dest) {
     int register = mLocals.indexOf(expr.getName());
@@ -65,7 +73,7 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     //   foo(a = 1)
     //
     // where we want to assign to 'a' but also use the value as an argument.
-    if (register != dest) {
+    if ((dest != DISCARD) && (register != dest)) {
       write(Op.MOVE, register, dest);
     }
     
@@ -91,6 +99,7 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     }
     
     // Call it.
+    // TODO(bob): What if dest == -1?
     write(Op.CALL, dest, fn, expr.getArgs().size());
     
     for (int i = 0; i < expr.getArgs().size(); i++) {
@@ -109,6 +118,9 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
 
   @Override
   public Integer visit(NameExpr expr, Integer dest) {
+    // Do nothing if we are ignoring the result.
+    if (dest == DISCARD) return dest;
+    
     // See if it's a local.
     for (int i = 0; i < mLocals.size(); i++) {
       if (mLocals.get(i).equals(expr.getName())) {
@@ -133,11 +145,14 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
 
   @Override
   public Integer visit(SequenceExpr sequence, Integer dest) {
-    // Reuse the destination so that the results of earlier expressions in the
-    // sequence just get overwritten.
-    for (Expr expr : sequence.getExpressions()) {
-      expr.accept(this, dest);
+    for (int i = 0; i < sequence.getExpressions().size(); i++) {
+      Expr expr = sequence.getExpressions().get(i);
+      // Discard the results of all but the last expression in the sequence.
+      int thisDest = dest;
+      if (i < sequence.getExpressions().size() - 1) thisDest = DISCARD;
+      expr.accept(this, thisDest);
     }
+    
     return dest;
   }
 
@@ -158,7 +173,7 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     expr.getValue().accept(this, localRegister);
     
     // Then copy the value to the desired slot.
-    if (localRegister != dest) {
+    if ((dest != DISCARD) && (localRegister != dest)) {
       write(Op.MOVE, localRegister, dest);
     }
     
@@ -199,6 +214,9 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
   }
 
   private void compileConstant(Object value, int dest) {
+    // Don't load the constant if we aren't loading it into anything.
+    if (dest == DISCARD) return;
+    
     // TODO(bob): Look for duplicates.
     mFunction.constants.add(value);
     write(Op.CONSTANT, mFunction.constants.size() - 1, dest);
