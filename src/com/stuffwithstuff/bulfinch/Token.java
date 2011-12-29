@@ -51,6 +51,8 @@ public final class Token {
       return "(line)";
     case DOT:
       return ".";
+    case EQUALS:
+      return "=";
       
     case NAME:
       return mStringValue + " (name)";

@@ -31,5 +31,9 @@ public class SequenceExpr implements Expr {
     return builder.toString();
   }
 
+  public <T> void accept(ExprVisitor<T> visitor, T arg) {
+    visitor.visit(this, arg);
+  }
+
   private final List<Expr> mExpressions;
 }

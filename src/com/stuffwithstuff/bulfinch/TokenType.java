@@ -9,6 +9,7 @@ public enum TokenType {
   RIGHT_BRACE,
   COMMA,
   DOT,
+  EQUALS,
   
   NAME,
   OPERATOR,

@@ -73,6 +73,8 @@ public class Lexer {
           return singleCharToken(TokenType.LINE);
         case '.':
           return singleCharToken(TokenType.DOT);
+        case '=':
+          return singleCharToken(TokenType.EQUALS);
 
         case '"':
           startToken(LexState.IN_STRING);

@@ -1,17 +1,23 @@
 package com.stuffwithstuff.bulfinch;
 
-public class NameExpr implements Expr {
-  public NameExpr(final String name) {
+public class VarExpr implements Expr {
+
+  public VarExpr(String name, Expr value) {
     mName = name;
+    mValue = value;
   }
 
   public String getName() {
     return mName;
   }
 
+  public Expr getValue() {
+    return mValue;
+  }
+
   @Override
   public String toString() {
-    return mName;
+    return "var " + mName + " = " + mValue.toString();
   }
 
   public <T> void accept(ExprVisitor<T> visitor, T arg) {
@@ -19,4 +25,5 @@ public class NameExpr implements Expr {
   }
 
   private final String mName;
+  private final Expr mValue;
 }

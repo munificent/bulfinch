@@ -16,6 +16,10 @@ public class FunctionExpr implements Expr {
     return mBody;
   }
 
+  public <T> void accept(ExprVisitor<T> visitor, T arg) {
+    visitor.visit(this, arg);
+  }
+
   private final List<String> mParameters;
   private final Expr mBody;
 }

@@ -14,6 +14,9 @@ public class StringExpr implements Expr {
     return mValue;
   }
 
-  private final String mValue;
+  public <T> void accept(ExprVisitor<T> visitor, T arg) {
+    visitor.visit(this, arg);
+  }
 
+  private final String mValue;
 }

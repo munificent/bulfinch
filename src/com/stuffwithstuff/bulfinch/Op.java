@@ -13,15 +13,21 @@ public class Op {
   // A = source reg, B = dest reg
   
   public static final int CALL = 2;
-  // Calls a function, passing in arguments. After calling, the return value
-  // will be placed in register B.
-  // A = function, B = first arg reg, C = last arg reg
+  // Calls a function. The function is in register A. All registers after A to
+  // the top of the stack are the parameters to the function. After calling,
+  // the return value will be placed in register A.
+  // A = function
   
   public static final int RETURN = 3;
   // Returns from the function.
   // A = result reg
   
-  public static final int PRINT = 4;
+  public static final int LOAD_GLOBAL = 4;
+  // Loads a named global into a register.
+  // A = index of constant containing name
+  // B = dest reg
+  
+  public static final int PRINT = 5;
   // Prints a register. Mostly for debugging.
   // A = reg to print
 

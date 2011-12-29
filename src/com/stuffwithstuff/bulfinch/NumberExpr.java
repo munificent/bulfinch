@@ -16,6 +16,10 @@ public class NumberExpr implements Expr {
     return sFormat.format(mValue);
   }
 
+  public <T> void accept(ExprVisitor<T> visitor, T arg) {
+    visitor.visit(this, arg);
+  }
+
   private static final NumberFormat sFormat;
 
   static {

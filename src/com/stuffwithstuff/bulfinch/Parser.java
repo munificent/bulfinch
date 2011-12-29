@@ -22,6 +22,18 @@ public abstract class Parser {
     return true;
   }
 
+  protected Token consume(TokenType type) {
+    return consume(type, "Expect '" + type + "'.'");
+  }
+  
+  protected Token consume(TokenType type, String error) {
+    if (!match(type)) {
+      throw new ParseException(error);
+    }
+    
+    return mLastMatch[0];
+  }
+  
   protected boolean match(TokenType... types) {
     // don't consume any unless all match
     if (!isMatch(types))

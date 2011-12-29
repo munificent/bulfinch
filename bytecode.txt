@@ -1,0 +1,71 @@
+This is some examples of hand-compiling various functions to try to figure out
+what the resulting bytecode should be and then infer what algorithm I'm using.
+
+fn foo() {
+  var a = 5
+  add(6, 7)
+  var b = 8
+  add(9, 10)
+}
+
+                        0    1    2    3    4
+CONSTANT(5, 0):         5
+LOAD_GLOBAL("add", 1):  5,   add
+CONSTANT(6, 2):         5,   add, 6
+CONSTANT(7, 3):         5,   add, 6,   7
+CALL(1, 2, 4):          5,   13
+CONSTANT(8, 1):         5,   8
+LOAD_GLOBAL("add", 2):  5,   8,   add
+CONSTANT(9, 3):         5,   8,   add, 9
+CONSTANT(10, 4):        5,   8,   add, 9,   10
+CALL(2, 3, 5):          5,   8,   19
+
+-------------------------------------------
+
+fn main() {
+  var a = 123
+  var b = a
+}
+
+                        0
+CONSTANT(123, 0):       123
+MOVE(0, 1):             123, 123
+
+-------------------------------------------
+
+fn main() {
+  bar(11, var a = 22)
+}
+
+                        0    1    2    3    4
+LOAD_GLOBAL("bar", 1):  ???, bar
+CONSTANT(11, 1):        ???, bar, 11
+LOAD_GLOBAL(22, 0):     22,  bar, 11
+MOVE(0, 3):             22,  bar, 11,  22
+CALL(1, 2, 4):          22,  "r"
+
+Notes: This one is particularly tricky. Note that before any instructions are
+generated, we need to know to save a register (0) for the as-yet-undeclared
+local 'a'. I don't see how to do this with a one-pass compiler.
+
+The other tricky bit is that MOVE(0, 3). When we do a variable declaration, we
+need to: 1) initialize the actual register for the variable then 2) MOVE the
+value into the actual desired destination.
+
+
+-------------------------------------------
+
+fn main() {
+  add(inc(11), sub(55, 22))
+}
+
+                        0    1    2    3    4
+LOAD_GLOBAL("add", 0):  add
+LOAD_GLOBAL("inc", 1):  add, inc
+CONSTANT(11, 2):        add, inc, 11
+CALL(1, 2, 3):          add, 12
+LOAD_GLOBAL("mul", 2):  add, 12,  sub
+CONSTANT(55, 3):        add, 12,  sub, 55
+CONSTANT(22, 4):        add, 12,  sub, 55,  22
+CALL(2, 3, 5):          add, 12,  33
+CALL(0, 1, 3):          35
