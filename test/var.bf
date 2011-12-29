@@ -1,14 +1,6 @@
-# expect: eee
-
-fn foo(a) {
-  var b = a
-  var c = "not"
-  var d = c
-  var e = "eee"
-  var f = e
-  f
-}
+# expect: a
 
 fn main() {
-  foo("arg")
+  var a = "a"
+  a
 }

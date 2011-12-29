@@ -26,11 +26,11 @@ import java.util.List;
  *  }
  * 
  * When we compile that, we compile the "2" before the "var a = 3". Which
- * register should we load it into?
+ * register should we load it into? If we were to restrict the grammar to not
+ * allow variable declarations inside calls, we could allocate local variable
+ * registers incrementally as they are evaluated in the function.
  */
 public class Compiler implements ExprVisitor<Integer, Integer> {
-  Compiler() {}
-  
   Function compile(FunctionExpr function, String name) {
     mLocals = LocalFinder.getLocals(function);
     
