@@ -56,7 +56,19 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
           expr.getName());
     }
     
+    // Assign the value to the local.
     expr.getValue().accept(this, register);
+    
+    // If we have another destination, copy there too. This would be something
+    // like:
+    //
+    //   foo(a = 1)
+    //
+    // where we want to assign to 'a' but also use the value as an argument.
+    if (register != dest) {
+      write(Op.MOVE, register, dest);
+    }
+    
     return dest;
   }
   
