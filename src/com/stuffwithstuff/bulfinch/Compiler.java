@@ -31,9 +31,15 @@ import java.util.List;
  * registers incrementally as they are evaluated in the function.
  */
 public class Compiler implements ExprVisitor<Integer, Integer> {
-  Function compile(FunctionExpr function, String name) {
-    mLocals = LocalFinder.getLocals(function);
+  public static Function compile(FunctionExpr function, String name) {
+    Compiler compiler = new Compiler(function, name);
+    return compiler.mFunction;
+  }
+
+  private Compiler(FunctionExpr function, String name) {
+    // TODO(bob): Doing all of this in the ctor is nasty.
     
+    mLocals = LocalFinder.getLocals(function);
     mFunction = new Function(name, mLocals);
     
     // Make sure we have registers for each local and one for the result.
@@ -44,10 +50,8 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     // Compile the body.
     function.getBody().accept(this,  mLocals.size());
     write(Op.RETURN,  mLocals.size());
-
-    return mFunction;
   }
-
+  
   /**
    * This special register means that we don't care about the result value. It
    * is used as the destination for all but the last expression in a sequence.
@@ -113,7 +117,9 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
 
   @Override
   public Integer visit(FunctionExpr expr, Integer dest) {
-    throw new RuntimeException("Not impl.");
+    Function function = Compiler.compile(expr, "<anon>");
+    compileConstant(function, dest);
+    return dest;
   }
 
   @Override

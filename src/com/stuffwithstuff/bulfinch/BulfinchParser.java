@@ -14,24 +14,8 @@ public class BulfinchParser extends Parser {
       consume(TokenType.FN);
       String name = consume(TokenType.NAME).getString();
       
-      // Parse the parameters.
-      consume(TokenType.LEFT_PAREN);
-      List<String> params = new ArrayList<String>();
-      if (match(TokenType.RIGHT_PAREN)) {
-        // No params.
-      } else {
-        do {
-          String param = consume(TokenType.NAME).getString();
-          params.add(param);
-        } while (match(TokenType.COMMA));
-        
-        consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
-      }
-      
-      // Parse the body.
-      consume(TokenType.LEFT_BRACE);
-      Expr body = sequence();
-      consume(TokenType.RIGHT_BRACE);
+      List<String> params = parseParams();
+      Expr body = parseBody();
       
       functions.put(name, new FunctionExpr(params, body));
       
@@ -40,7 +24,7 @@ public class BulfinchParser extends Parser {
     
     return functions;
   }
-
+  
   private Expr sequence() {
     List<Expr> exprs = new ArrayList<Expr>();
 
@@ -108,6 +92,11 @@ public class BulfinchParser extends Parser {
       Expr value = call();
       return new VarExpr(name, value);
       
+    } else if (match(TokenType.FN)) {
+      List<String> params = parseParams();
+      Expr body = parseBody();
+      return new FunctionExpr(params, body);
+      
     } else if (match(TokenType.NUMBER)) {
       return new NumberExpr(getMatch()[0].getDouble());
 
@@ -123,5 +112,31 @@ public class BulfinchParser extends Parser {
     }
 
     throw new ParseException("Couldn't parse primary.");
+  }
+
+
+  private List<String> parseParams() {
+    consume(TokenType.LEFT_PAREN);
+    List<String> params = new ArrayList<String>();
+    if (match(TokenType.RIGHT_PAREN)) {
+      // No params.
+    } else {
+      do {
+        String param = consume(TokenType.NAME).getString();
+        params.add(param);
+      } while (match(TokenType.COMMA));
+      
+      consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+    }
+    
+    return params;
+  }
+  
+  private Expr parseBody() {
+    // Parse the body.
+    consume(TokenType.LEFT_BRACE);
+    Expr body = sequence();
+    consume(TokenType.RIGHT_BRACE);
+    return body;
   }
 }

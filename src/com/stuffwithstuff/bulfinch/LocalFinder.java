@@ -37,7 +37,8 @@ public class LocalFinder implements ExprVisitor<Void, Void> {
 
   @Override
   public Void visit(FunctionExpr expr, Void arg) {
-    throw new RuntimeException("not impl");
+    // Do nothing.
+    return null;
   }
 
   @Override

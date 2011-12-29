@@ -42,10 +42,9 @@ public class Bulfinch {
     BulfinchParser parser = new BulfinchParser(lexer);
     Map<String, FunctionExpr> program = parser.parseProgram();
     
-    Compiler compiler = new Compiler();
     Map<String, Function> functions = new HashMap<String, Function>();
     for (Entry<String, FunctionExpr> entry : program.entrySet()) {
-      Function function = compiler.compile(entry.getValue(), entry.getKey());
+      Function function = Compiler.compile(entry.getValue(), entry.getKey());
       functions.put(entry.getKey(), function);
     }
     
