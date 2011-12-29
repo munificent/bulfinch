@@ -31,8 +31,8 @@ public class CallExpr implements Expr {
     return buffer.toString();
   }
 
-  public <T> void accept(ExprVisitor<T> visitor, T arg) {
-    visitor.visit(this, arg);
+  public <A,R> R accept(ExprVisitor<A,R> visitor, A arg) {
+    return visitor.visit(this, arg);
   }
 
   private final Expr mFunction;

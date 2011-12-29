@@ -1,12 +1,13 @@
 package com.stuffwithstuff.bulfinch;
 
-public interface ExprVisitor<T> {
-  void visit(BoolExpr expr, T arg);
-  void visit(CallExpr expr, T arg);
-  void visit(FunctionExpr expr, T arg);
-  void visit(NameExpr expr, T arg);
-  void visit(NumberExpr expr, T arg);
-  void visit(SequenceExpr expr, T arg);
-  void visit(StringExpr expr, T arg);
-  void visit(VarExpr expr, T arg);
+public interface ExprVisitor<A,R> {
+  R visit(AssignExpr expr, A arg);
+  R visit(BoolExpr expr, A arg);
+  R visit(CallExpr expr, A arg);
+  R visit(FunctionExpr expr, A arg);
+  R visit(NameExpr expr, A arg);
+  R visit(NumberExpr expr, A arg);
+  R visit(SequenceExpr expr, A arg);
+  R visit(StringExpr expr, A arg);
+  R visit(VarExpr expr, A arg);
 }

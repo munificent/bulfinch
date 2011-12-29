@@ -41,10 +41,6 @@ public class BulfinchParser extends Parser {
     return functions;
   }
 
-  private Expr expression() {
-    return sequence();
-  }
-  
   private Expr sequence() {
     List<Expr> exprs = new ArrayList<Expr>();
 
@@ -55,13 +51,23 @@ public class BulfinchParser extends Parser {
       if (isMatch(TokenType.RIGHT_BRACKET)) break;
       if (isMatch(TokenType.EOF)) break;
 
-      exprs.add(call());
+      exprs.add(assign());
     } while (match(TokenType.LINE));
 
     // only create a list if we actually had a ;
     if (exprs.size() == 1) return exprs.get(0);
 
     return new SequenceExpr(exprs);
+  }
+  
+  private Expr assign() {
+    if (match(TokenType.NAME, TokenType.EQUALS)) {
+      String name = getMatch()[0].getString();
+      Expr value = assign();
+      return new AssignExpr(name, value);
+    }
+    
+    return call();
   }
   
   private Expr call() {
@@ -74,7 +80,7 @@ public class BulfinchParser extends Parser {
         // No args.
       } else {
         do {
-          args.add(call());
+          args.add(assign());
         } while (match(TokenType.COMMA));
         
         consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
@@ -109,7 +115,7 @@ public class BulfinchParser extends Parser {
       return new StringExpr(getMatch()[0].getString());
 
     } else if (match(TokenType.LEFT_PAREN)) {
-      Expr expr = expression();
+      Expr expr = assign();
 
       consume(TokenType.RIGHT_PAREN, "Missing closing ')'.");
       

@@ -28,7 +28,7 @@ import java.util.List;
  * When we compile that, we compile the "2" before the "var a = 3". Which
  * register should we load it into?
  */
-public class Compiler implements ExprVisitor<Integer> {
+public class Compiler implements ExprVisitor<Integer, Integer> {
   Compiler() {}
   
   Function compile(FunctionExpr function, String name) {
@@ -45,14 +45,27 @@ public class Compiler implements ExprVisitor<Integer> {
 
     return mFunction;
   }
+
+  @Override
+  public Integer visit(AssignExpr expr, Integer dest) {
+    int register = mLocals.indexOf(expr.getName());
+    if (register == -1) {
+      throw new RuntimeException("Cannot assign to unknown local " +
+          expr.getName());
+    }
+    
+    expr.getValue().accept(this, register);
+    return dest;
+  }
   
   @Override
-  public void visit(BoolExpr expr, Integer dest) {
+  public Integer visit(BoolExpr expr, Integer dest) {
     compileConstant(expr.getValue(), dest);
+    return dest;
   }
 
   @Override
-  public void visit(CallExpr expr, Integer dest) {
+  public Integer visit(CallExpr expr, Integer dest) {
     // Load the function.
     expr.getFunction().accept(this, dest);
     
@@ -67,20 +80,21 @@ public class Compiler implements ExprVisitor<Integer> {
     
     // Call it.
     write(Op.CALL, dest);
+    return dest;
   }
 
   @Override
-  public void visit(FunctionExpr expr, Integer dest) {
+  public Integer visit(FunctionExpr expr, Integer dest) {
     throw new RuntimeException("Not impl.");
   }
 
   @Override
-  public void visit(NameExpr expr, Integer dest) {
+  public Integer visit(NameExpr expr, Integer dest) {
     // See if it's a local.
     for (int i = 0; i < mLocals.size(); i++) {
       if (mLocals.get(i).equals(expr.getName())) {
         write(Op.MOVE, i, dest);
-        return;
+        return dest;
       }
     }
     
@@ -89,29 +103,33 @@ public class Compiler implements ExprVisitor<Integer> {
     int name = mFunction.constants.size() - 1;
     
     write(Op.LOAD_GLOBAL, name, dest);
+    return dest;
   }
 
   @Override
-  public void visit(NumberExpr expr, Integer dest) {
+  public Integer visit(NumberExpr expr, Integer dest) {
     compileConstant(expr.getValue(), dest);
+    return dest;
   }
 
   @Override
-  public void visit(SequenceExpr sequence, Integer dest) {
+  public Integer visit(SequenceExpr sequence, Integer dest) {
     // Reuse the destination so that the results of earlier expressions in the
     // sequence just get overwritten.
     for (Expr expr : sequence.getExpressions()) {
       expr.accept(this, dest);
     }
+    return dest;
   }
 
   @Override
-  public void visit(StringExpr expr, Integer dest) {
+  public Integer visit(StringExpr expr, Integer dest) {
     compileConstant(expr.getValue(), dest);
+    return dest;
   }
 
   @Override
-  public void visit(VarExpr expr, Integer dest) {
+  public Integer visit(VarExpr expr, Integer dest) {
     // Initialize the local.
     int localRegister = mLocals.indexOf(expr.getName());
     if (localRegister == -1) {
@@ -124,6 +142,8 @@ public class Compiler implements ExprVisitor<Integer> {
     if (localRegister != dest) {
       write(Op.MOVE, localRegister, dest);
     }
+    
+    return dest;
   }
   
   public void write(int op, int a, int b, int c) {

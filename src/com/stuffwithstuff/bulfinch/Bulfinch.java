@@ -20,10 +20,16 @@ public class Bulfinch {
         run(script.getPath());
       }
     }
+    
+    System.out.println();
+    System.out.println(String.format("%s tests out of %s passed.",
+        mPasses, mTests));
   }
   
   private void run(String path) throws IOException {
     System.out.println("Running " + path);
+    
+    mTests++;
     
     BulfinchScript script = new BulfinchScript(path);
     String code = script.getSource();
@@ -51,8 +57,12 @@ public class Bulfinch {
     if (!expect.equals(result.toString())) {
       System.out.println("FAIL: " + result);
       System.out.println();
+    } else {
+      mPasses++;
     }
   }
   
   private Pattern mExpectPattern = Pattern.compile("# expect: (.+)\\n");
+  private int mTests = 0;
+  private int mPasses = 0;
 }

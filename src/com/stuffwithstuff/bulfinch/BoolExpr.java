@@ -14,8 +14,8 @@ public class BoolExpr implements Expr {
     return Boolean.toString(mValue);
   }
 
-  public <T> void accept(ExprVisitor<T> visitor, T arg) {
-    visitor.visit(this, arg);
+  public <A,R> R accept(ExprVisitor<A,R> visitor, A arg) {
+    return visitor.visit(this, arg);
   }
 
   private final boolean mValue;
