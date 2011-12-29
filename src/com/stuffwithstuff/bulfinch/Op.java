@@ -13,10 +13,10 @@ public class Op {
   // A = source reg, B = dest reg
   
   public static final int CALL = 2;
-  // Calls a function. The function is in register A. All registers after A to
-  // the top of the stack are the parameters to the function. After calling,
-  // the return value will be placed in register A.
-  // A = function
+  // Calls a function. The function to call is in register B. All C arguments
+  // are in successive registers after B. After calling, the result will be
+  // in register A.
+  // A = result reg, B = fn reg, C = num args
   
   public static final int RETURN = 3;
   // Returns from the function.

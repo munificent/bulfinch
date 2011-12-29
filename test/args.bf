@@ -1,7 +1,7 @@
-# expect: call foo
+# expect: f
 
 fn foo(a, b, c) {
-  "call foo"
+  "f"
 }
 
 fn main() {

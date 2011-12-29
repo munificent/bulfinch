@@ -32,13 +32,15 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
   Compiler() {}
   
   Function compile(FunctionExpr function, String name) {
-    mFunction = new Function(name);
-    
     mLocals = LocalFinder.getLocals(function);
+    
+    mFunction = new Function(name, mLocals);
     
     // Make sure we have registers for each local and one for the result.
     mFunction.numRegisters = mLocals.size() + 1;
 
+    mUsedRegisters = mFunction.numRegisters;
+    
     // Compile the body.
     function.getBody().accept(this,  mLocals.size());
     write(Op.RETURN,  mLocals.size());
@@ -67,19 +69,24 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
   @Override
   public Integer visit(CallExpr expr, Integer dest) {
     // Load the function.
-    expr.getFunction().accept(this, dest);
+    int fn = push();
+    expr.getFunction().accept(this, fn);
     
     // Evaluate the arguments.
     for (int i = 0; i < expr.getArgs().size(); i++) {
-      expr.getArgs().get(i).accept(this, dest + 1 + i);
+      int arg = push();
+      expr.getArgs().get(i).accept(this, arg);
     }
     
-    // Make sure we have enough registers for the arguments.
-    mFunction.numRegisters = Math.max(mFunction.numRegisters,
-        dest + expr.getArgs().size() + 1);
-    
     // Call it.
-    write(Op.CALL, dest);
+    write(Op.CALL, dest, fn, expr.getArgs().size());
+    
+    for (int i = 0; i < expr.getArgs().size(); i++) {
+      pop();
+    }
+    
+    pop(fn);
+    
     return dest;
   }
 
@@ -146,20 +153,37 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     return dest;
   }
   
-  public void write(int op, int a, int b, int c) {
+  private int push() {
+    mUsedRegisters++;
+    
+    // Make sure we have enough.
+    mFunction.numRegisters = Math.max(mFunction.numRegisters, mUsedRegisters);
+    
+    return mUsedRegisters - 1;
+  }
+  
+  private void pop(int pushed) {
+    if (pushed != mUsedRegisters - 1) {
+      throw new RuntimeException("mismatch!");
+    }
+    
+    pop();
+  }
+  
+  private void pop() {
+    mUsedRegisters--;
+  }
+  
+  private void write(int op, int a, int b, int c) {
     mFunction.code.add(new Op(op, a, b, c));
   }
   
-  public void write(int op, int a, int b) {
+  private void write(int op, int a, int b) {
     mFunction.code.add(new Op(op, a, b));
   }
   
-  public void write(int op, int a) {
+  private void write(int op, int a) {
     mFunction.code.add(new Op(op, a));
-  }
-  
-  public void write(int op) {
-    mFunction.code.add(new Op(op));
   }
 
   private void compileConstant(Object value, int dest) {
@@ -170,5 +194,5 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
   
   private Function mFunction;
   private List<String> mLocals;
-  
+  private int mUsedRegisters;
 }

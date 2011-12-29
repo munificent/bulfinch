@@ -1,7 +1,7 @@
 # expect: foo
 
 fn foo() {
-  "foo fn"
+  "fn"
 }
 
 fn main() {

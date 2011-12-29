@@ -1,5 +1,5 @@
-# expect: hello
+# expect: hi
 
 fn main() {
-  "hello"
+  "hi"
 }

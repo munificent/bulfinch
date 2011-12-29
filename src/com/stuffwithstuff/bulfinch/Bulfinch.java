@@ -49,6 +49,8 @@ public class Bulfinch {
       functions.put(entry.getKey(), function);
     }
     
+    dumpProgram(functions);
+    
     VM vm = new VM(functions);
     Object result = vm.execute();
 
@@ -60,6 +62,85 @@ public class Bulfinch {
     } else {
       mPasses++;
     }
+  }
+  
+  private void dumpProgram(Map<String, Function> program) {
+    for (Entry<String, Function> entry : program.entrySet()) {
+      System.out.println(entry.getKey());
+      
+      Function function = entry.getValue();
+      
+      // Dump the constants.
+      if (function.constants.size() > 0) {
+        System.out.println("constants");
+        
+        for (int i = 0; i < function.constants.size(); i++) {
+          System.out.println(String.format("  %-2s : %s",
+              i, function.constants.get(i)));
+        }
+      }
+      
+      // Dump the registers.
+      System.out.println("registers");
+      for (int i = 0; i < function.numRegisters; i++) {
+        String name = "<temp>";
+        if (i < function.getLocals().size()) {
+          name = function.getLocals().get(i);
+        }
+        System.out.println(String.format("  %-2s : %s", i, name));
+      }
+      
+      // Dump the code.
+      System.out.println("code");
+      for (int i = 0; i < function.code.size(); i++) {
+        Op op = function.code.get(i);
+        switch (op.opcode) {
+        case Op.CONSTANT:
+          System.out.println(String.format(
+              "  CONSTANT     %s -> %s", prettyConst(function, op.a), prettyReg(function, op.b)));
+          break;
+        
+        case Op.MOVE:
+          System.out.println(String.format(
+              "  MOVE         %s -> %s", prettyReg(function, op.a), prettyReg(function, op.b)));
+          break;
+        
+        case Op.CALL:
+          System.out.println(String.format(
+              "  CALL         %s <- %s %s", prettyReg(function, op.a), op.b, op.c));
+          break;
+        
+        case Op.RETURN:
+          System.out.println(String.format(
+              "  RETURN       %s", prettyReg(function, op.a)));
+          break;
+        
+        case Op.LOAD_GLOBAL:
+          System.out.println(String.format(
+              "  LOAD_GLOBAL  %s -> %s", prettyConst(function, op.a), prettyReg(function, op.b)));
+          break;
+        
+        case Op.PRINT:
+          System.out.println(String.format(
+              "  PRINT        %s", prettyReg(function, op.a)));
+          break;
+        }
+      }
+      
+      System.out.println();
+    }
+  }
+  
+  private String prettyConst(Function function, int constant) {
+    return String.format("%s (%s)", constant, function.constants.get(constant));
+  }
+
+  private String prettyReg(Function function, int register) {
+    if (register < function.getLocals().size()) {
+      return String.format("%s (%s)", register, function.getLocals().get(register));
+    }
+    
+    return String.format("%s", register);
   }
   
   private Pattern mExpectPattern = Pattern.compile("# expect: (.+)\\n");

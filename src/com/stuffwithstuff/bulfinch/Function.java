@@ -7,11 +7,14 @@ import java.util.List;
  * A compiled function.
  */
 public class Function {
-  public Function(String debugName) {
+  public Function(String debugName, List<String> locals) {
     mDebugName = debugName;
+    mLocals = locals;
     constants = new ArrayList<Object>();
     code = new ArrayList<Op>();
   }
+  
+  public List<String> getLocals() { return mLocals; }
   
   @Override
   public String toString() {
@@ -19,6 +22,7 @@ public class Function {
   }
   
   private final String mDebugName;
+  private final List<String> mLocals;
   
   public List<Object> constants;
   public List<Op> code;

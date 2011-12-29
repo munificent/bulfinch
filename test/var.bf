@@ -1,10 +1,10 @@
-# expect: other
+# expect: eee
 
 fn foo(a) {
   var b = a
-  var c = "not used"
+  var c = "not"
   var d = c
-  var e = "other"
+  var e = "eee"
   var f = e
   f
 }

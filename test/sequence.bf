@@ -1,4 +1,4 @@
-# expect: sequence
+# expect: seq
 
 fn main() {
   "hello"
@@ -6,5 +6,5 @@ fn main() {
   "this"
   "is"
   "a"
-  "sequence"
+  "seq"
 }

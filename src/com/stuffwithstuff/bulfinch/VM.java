@@ -12,26 +12,25 @@ public class VM {
   
   public Object execute() {
     // Call main().
-    call(mFunctions.get("main"), 0);
+    call(mFunctions.get("main"), 0, 0);
     
     return run();
   }
 
-  private void call(Function function, int topOfStack) {
-    mFrames.push(new CallFrame(function, topOfStack));
-    
+  private void call(Function function, int firstArg, int numArgs) {
     // This uses an overlapping register window to pass arguments to the called
     // function. The caller sets up the top of the stack like:
     // fn, arg1, arg2, arg3
     // The callee's stack frame is then set up to start at arg1's position.
-    // It will use those registers for its parameters.
+    // It will use those registers for its parameters. This assumes that in
+    // the caller's frame, any registers *past* the arguments to this call are
+    // unused and can be trashed by the callee.
     
-    // TODO(bob): What happens if the number of args doesn't match the number
-    // of params? (Note: not an actual issue in Finch since the message name
-    // determines the count.)
+    CallFrame frame = new CallFrame(function, firstArg);
+    mFrames.push(frame);
     
     // Allocate registers for the function.
-    while (mStack.size() < topOfStack + function.numRegisters) {
+    while (mStack.size() < frame.stackStart + function.numRegisters) {
       mStack.add(null);
     }
   }
@@ -56,9 +55,9 @@ public class VM {
       }
 
       case Op.CALL: {
-        Function function = (Function)load(op.a);
-        call(function, op.a + 1);
-        trace("CALL", op.a);
+        Function function = (Function)load(op.b);
+        call(function, frame.stackStart + op.b + 1, op.c);
+        trace("CALL", op.a, op.b, op.c);
         break;
       }
       
@@ -67,7 +66,10 @@ public class VM {
 
         mFrames.pop();
         
-        if (mFrames.size() == 0) return result;
+        if (mFrames.size() == 0) {
+          trace("RETURN", op.a);
+          return result;
+        }
         
         CallFrame caller = mFrames.peek();
 
@@ -112,6 +114,10 @@ public class VM {
     return mStack.set(mFrames.peek().stackStart + register, value);
   }
 
+  private void trace(String op, int a, int b, int c) {
+    trace(op + "(" + a + ", " + b + ", " + c + ")");
+  }
+
   private void trace(String op, int a, int b) {
     trace(op + "(" + a + ", " + b + ")");
   }
@@ -121,10 +127,17 @@ public class VM {
   }
   
   private void trace(String op) {
-    System.out.print(String.format("%-20s: ", op));
+    System.out.print(String.format("%-20s", op));
     
+    int j = 0;
     for (int i = 0; i < mStack.size(); i++) {
-      System.out.print(String.format("%-8s  ", mStack.get(i)));
+      if ((j < mFrames.size()) && (mFrames.get(j).stackStart == i)) {
+        System.out.print(" | ");
+        j++;
+      } else {
+        System.out.print("   ");
+      }
+      System.out.print(String.format("%-5s", mStack.get(i)));
     }
     
     System.out.println();
