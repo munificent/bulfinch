@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Stack;
 
 public class VM {
-  public VM(Map<String, Function> functions) {
+  public VM(Map<String, Closure> functions) {
     mFunctions = functions;
   }
   
@@ -17,7 +17,7 @@ public class VM {
     return run();
   }
 
-  private void call(Function function, int firstArg, int numArgs) {
+  private void call(Closure closure, int firstArg, int numArgs) {
     // This uses an overlapping register window to pass arguments to the called
     // function. The caller sets up the top of the stack like:
     // fn, arg1, arg2, arg3
@@ -26,11 +26,11 @@ public class VM {
     // the caller's frame, any registers *past* the arguments to this call are
     // unused and can be trashed by the callee.
     
-    CallFrame frame = new CallFrame(function, firstArg);
+    CallFrame frame = new CallFrame(closure, firstArg);
     mFrames.push(frame);
     
     // Allocate registers for the function.
-    while (mStack.size() < frame.stackStart + function.getNumRegisters()) {
+    while (mStack.size() < frame.stackStart + closure.getFunction().getNumRegisters()) {
       mStack.add(null);
     }
   }
@@ -38,11 +38,11 @@ public class VM {
   private Object run() {
     while (true) {
       CallFrame frame = mFrames.peek();
-      Op op = frame.function.getCode().get(frame.ip++);
+      Op op = frame.getFunction().getCode().get(frame.ip++);
       
       switch (op.opcode) {
       case Op.CONSTANT: {
-        Object value = frame.function.getConstant(op.a);
+        Object value = frame.getFunction().getConstant(op.a);
         store(op.b, value);
         trace("CONSTANT", op.a, op.b);
         break;
@@ -55,8 +55,8 @@ public class VM {
       }
 
       case Op.CALL: {
-        Function function = (Function)load(op.b);
-        call(function, frame.stackStart + op.b + 1, op.c);
+        Closure closure = (Closure)load(op.b);
+        call(closure, frame.stackStart + op.b + 1, op.c);
         trace("CALL", op.a, op.b, op.c);
         break;
       }
@@ -75,14 +75,14 @@ public class VM {
 
         // Discard the returning function's registers.
         while (mStack.size() > caller.stackStart +
-            caller.function.getNumRegisters()) {
+            caller.getFunction().getNumRegisters()) {
           mStack.remove(mStack.size() - 1);
         }
 
         // Store the result value in the register set by the caller's CALL
         // instruction.
         // - 1 because we've already advanced past the CALL.
-        int dest = caller.function.getCode().get(caller.ip - 1).a;
+        int dest = caller.getFunction().getCode().get(caller.ip - 1).a;
         
         // If the destination register is -1 that means it's result is being
         // discarded, so don't store anything.
@@ -96,17 +96,20 @@ public class VM {
 
       case Op.LOAD_GLOBAL: {
         // TODO(bob): Right now, all globals are just functions.
-        String name = frame.function.getConstant(op.a).toString();
-        Function function = mFunctions.get(name);
-        store(op.b, function);
+        String name = frame.getFunction().getConstant(op.a).toString();
+        Closure closure = mFunctions.get(name);
+        store(op.b, closure);
         trace("LOAD_GLOBAL", op.a, op.b);
         break;
       }
-
-      case Op.PRINT: {
-        Object value = load(op.a);
-        System.out.println(value);
-        trace("PRINT", op.a);
+      
+      case Op.CLOSURE: {
+        Function function = (Function)frame.getFunction().getConstant(op.a);
+        
+        // TODO(bob): Capture upvars.
+        Closure closure = new Closure(function);
+        store(op.b, closure);
+        trace("CLOSURE", op.a, op.b);
         break;
       }
       }
@@ -150,7 +153,7 @@ public class VM {
     System.out.println();
   }
   
-  private final Map<String, Function> mFunctions;
+  private final Map<String, Closure> mFunctions;
   private final List<Object> mStack = new ArrayList<Object>();
   private final Stack<CallFrame> mFrames = new Stack<CallFrame>();
 }

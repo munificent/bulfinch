@@ -88,11 +88,6 @@ public class Function {
         System.out.println(String.format(
             "  LOAD_GLOBAL  %s -> %s", prettyConst(op.a), prettyReg(op.b)));
         break;
-      
-      case Op.PRINT:
-        System.out.println(String.format(
-            "  PRINT        %s", prettyReg(op.a)));
-        break;
       }
     }
   }

@@ -27,10 +27,11 @@ public class Op {
   // A = index of constant containing name
   // B = dest reg
   
-  public static final int PRINT = 5;
-  // Prints a register. Mostly for debugging.
-  // A = reg to print
-
+  public static final int CLOSURE = 5;
+  // Creates a new closure for the given function.
+  // A = index of constant containing function
+  // B = dest reg
+  
   public final int opcode;
   public final int a;
   public final int b;

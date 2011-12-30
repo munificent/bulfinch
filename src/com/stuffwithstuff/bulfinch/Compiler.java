@@ -115,8 +115,16 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
 
   @Override
   public Integer visit(FunctionExpr expr, Integer dest) {
+    // Don't load the function if we aren't loading it into anything.
+    if (dest == DISCARD) return dest;
+    
+    // Compile the function and add it to the constant pool.
     Function function = Compiler.compile(expr, "<anon>");
-    compileConstant(function, dest);
+    int index = mFunction.addConstant(function);
+    
+    // Write an op to create a closure for the function.
+    write(Op.CLOSURE, index, dest);
+    
     return dest;
   }
 

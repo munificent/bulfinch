@@ -1,12 +1,16 @@
 package com.stuffwithstuff.bulfinch;
 
 public class CallFrame {
-  CallFrame(Function function, int stackStart) {
-    this.function = function;
+  CallFrame(Closure closure, int stackStart) {
+    this.closure = closure;
     this.stackStart = stackStart;
+  }
+  
+  public Function getFunction() {
+    return closure.getFunction();
   }
   
   public int ip;
   public int stackStart;
-  public Function function;
+  public Closure closure;
 }
