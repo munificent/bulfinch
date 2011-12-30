@@ -43,9 +43,7 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     mFunction = new Function(name, mLocals);
     
     // Make sure we have registers for each local and one for the result.
-    mFunction.numRegisters = mLocals.size() + 1;
-
-    mUsedRegisters = mFunction.numRegisters;
+    mUsedRegisters = mFunction.ensureRegisters(mLocals.size() + 1);
     
     // Compile the body.
     function.getBody().accept(this,  mLocals.size());
@@ -136,8 +134,7 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     }
     
     // Must be a global.
-    mFunction.constants.add(expr.getName());
-    int name = mFunction.constants.size() - 1;
+    int name = mFunction.addConstant(expr.getName());
     
     write(Op.LOAD_GLOBAL, name, dest);
     return dest;
@@ -190,7 +187,7 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     mUsedRegisters++;
     
     // Make sure we have enough.
-    mFunction.numRegisters = Math.max(mFunction.numRegisters, mUsedRegisters);
+    mFunction.ensureRegisters(mUsedRegisters);
     
     return mUsedRegisters - 1;
   }
@@ -208,24 +205,22 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
   }
   
   private void write(int op, int a, int b, int c) {
-    mFunction.code.add(new Op(op, a, b, c));
+    mFunction.getCode().add(new Op(op, a, b, c));
   }
   
   private void write(int op, int a, int b) {
-    mFunction.code.add(new Op(op, a, b));
+    mFunction.getCode().add(new Op(op, a, b));
   }
   
   private void write(int op, int a) {
-    mFunction.code.add(new Op(op, a));
+    mFunction.getCode().add(new Op(op, a));
   }
 
   private void compileConstant(Object value, int dest) {
     // Don't load the constant if we aren't loading it into anything.
     if (dest == DISCARD) return;
     
-    // TODO(bob): Look for duplicates.
-    mFunction.constants.add(value);
-    write(Op.CONSTANT, mFunction.constants.size() - 1, dest);
+    write(Op.CONSTANT, mFunction.addConstant(value), dest);
   }
   
   private Function mFunction;

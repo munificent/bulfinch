@@ -10,26 +10,48 @@ public class Function {
   public Function(String debugName, List<String> locals) {
     mDebugName = debugName;
     mLocals = locals;
-    constants = new ArrayList<Object>();
-    code = new ArrayList<Op>();
+    mConstants = new ArrayList<Object>();
+    mCode = new ArrayList<Op>();
+  }
+  
+  public int addConstant(Object constant) {
+    // TODO(bob): Check for duplicates.
+    mConstants.add(constant);
+    return mConstants.size() - 1;
+  }
+  
+  public Object getConstant(int index) {
+    return mConstants.get(index);
+  }
+  
+  public int getNumRegisters() {
+    return mNumRegisters;
+  }
+  
+  public int ensureRegisters(int numRegisters) {
+    return mNumRegisters = Math.max(numRegisters, mNumRegisters);
+  }
+  
+  public List<Op> getCode() {
+    return mCode;
   }
   
   public void dump() {
     System.out.println(mDebugName);
     
     // Dump the constants.
-    if (constants.size() > 0) {
+    if (mConstants.size() > 0) {
       System.out.println("constants");
       
-      for (int i = 0; i < constants.size(); i++) {
+      for (int i = 0; i < mConstants.size(); i++) {
         System.out.println(String.format("  %-2s : %s",
-            i, constants.get(i)));
+            i, mConstants.get(i)));
       }
     }
     
     // Dump the registers.
     System.out.println("registers");
-    for (int i = 0; i < numRegisters; i++) {
+    for (int i = 0; i < mNumRegisters; i++) {
       String name = "<temp>";
       if (i < mLocals.size()) {
         name = mLocals.get(i);
@@ -39,8 +61,8 @@ public class Function {
     
     // Dump the code.
     System.out.println("code");
-    for (int i = 0; i < code.size(); i++) {
-      Op op = code.get(i);
+    for (int i = 0; i < mCode.size(); i++) {
+      Op op = mCode.get(i);
       switch (op.opcode) {
       case Op.CONSTANT:
         System.out.println(String.format(
@@ -81,7 +103,7 @@ public class Function {
   }
   
   private String prettyConst(int constant) {
-    return String.format("%s (%s)", constant, constants.get(constant));
+    return String.format("%s (%s)", constant, mConstants.get(constant));
   }
 
   private String prettyReg(int register) {
@@ -94,8 +116,7 @@ public class Function {
   
   private final String mDebugName;
   private final List<String> mLocals;
-  
-  public List<Object> constants;
-  public List<Op> code;
-  public int numRegisters;
+  private List<Object> mConstants;
+  private List<Op> mCode;
+  private int mNumRegisters;
 }

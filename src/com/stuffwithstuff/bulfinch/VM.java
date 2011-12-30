@@ -30,7 +30,7 @@ public class VM {
     mFrames.push(frame);
     
     // Allocate registers for the function.
-    while (mStack.size() < frame.stackStart + function.numRegisters) {
+    while (mStack.size() < frame.stackStart + function.getNumRegisters()) {
       mStack.add(null);
     }
   }
@@ -38,11 +38,11 @@ public class VM {
   private Object run() {
     while (true) {
       CallFrame frame = mFrames.peek();
-      Op op = frame.function.code.get(frame.ip++);
+      Op op = frame.function.getCode().get(frame.ip++);
       
       switch (op.opcode) {
       case Op.CONSTANT: {
-        Object value = frame.function.constants.get(op.a);
+        Object value = frame.function.getConstant(op.a);
         store(op.b, value);
         trace("CONSTANT", op.a, op.b);
         break;
@@ -74,14 +74,15 @@ public class VM {
         CallFrame caller = mFrames.peek();
 
         // Discard the returning function's registers.
-        while (mStack.size() > caller.stackStart + caller.function.numRegisters) {
+        while (mStack.size() > caller.stackStart +
+            caller.function.getNumRegisters()) {
           mStack.remove(mStack.size() - 1);
         }
 
         // Store the result value in the register set by the caller's CALL
         // instruction.
         // - 1 because we've already advanced past the CALL.
-        int dest = caller.function.code.get(caller.ip - 1).a;
+        int dest = caller.function.getCode().get(caller.ip - 1).a;
         
         // If the destination register is -1 that means it's result is being
         // discarded, so don't store anything.
@@ -95,7 +96,7 @@ public class VM {
 
       case Op.LOAD_GLOBAL: {
         // TODO(bob): Right now, all globals are just functions.
-        String name = frame.function.constants.get(op.a).toString();
+        String name = frame.function.getConstant(op.a).toString();
         Function function = mFunctions.get(name);
         store(op.b, function);
         trace("LOAD_GLOBAL", op.a, op.b);
