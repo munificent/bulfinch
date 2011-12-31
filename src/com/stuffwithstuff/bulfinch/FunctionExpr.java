@@ -16,10 +16,21 @@ public class FunctionExpr implements Expr {
     return mBody;
   }
 
+  public List<String> getLocals() {
+    Expect.state(mLocals != null, "Unresolved function.");
+    return mLocals;
+  }
+  
+  public void setLocals(List<String> locals) {
+    Expect.state(mLocals == null, "Already resolved function.");
+    mLocals = locals;
+  }
+  
   public <A,R> R accept(ExprVisitor<A,R> visitor, A arg) {
     return visitor.visit(this, arg);
   }
 
   private final List<String> mParameters;
   private final Expr mBody;
+  private List<String> mLocals;
 }

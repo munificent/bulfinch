@@ -31,23 +31,15 @@ import java.util.List;
  * registers incrementally as they are evaluated in the function.
  */
 public class Compiler implements ExprVisitor<Integer, Integer> {
-  public static Function compile(FunctionExpr function, String name) {
-    Compiler compiler = new Compiler(function, name);
-    return compiler.mFunction;
+  public static Function compileTopLevel(FunctionExpr function, String name) {
+    NameResolver.resolve(function);
+    return compileInnerFunction(function, name);
   }
 
-  private Compiler(FunctionExpr function, String name) {
-    // TODO(bob): Doing all of this in the ctor is nasty.
-    
-    mLocals = LocalFinder.getLocals(function);
-    mFunction = new Function(name, mLocals);
-    
-    // Make sure we have registers for each local and one for the result.
-    mUsedRegisters = mFunction.ensureRegisters(mLocals.size() + 1);
-    
-    // Compile the body.
-    function.getBody().accept(this,  mLocals.size());
-    write(Op.RETURN,  mLocals.size());
+  private static Function compileInnerFunction(FunctionExpr function, String name) {
+    Compiler compiler = new Compiler();
+    compiler.compile(function, name);
+    return compiler.mFunction;
   }
   
   /**
@@ -60,11 +52,7 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
   
   @Override
   public Integer visit(AssignExpr expr, Integer dest) {
-    int register = mLocals.indexOf(expr.getName());
-    if (register == -1) {
-      throw new RuntimeException("Cannot assign to unknown local " +
-          expr.getName());
-    }
+    int register = expr.getName().getLocalIndex();
     
     // Assign the value to the local.
     expr.getValue().accept(this, register);
@@ -119,7 +107,7 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     if (dest == DISCARD) return dest;
     
     // Compile the function and add it to the constant pool.
-    Function function = Compiler.compile(expr, "<anon>");
+    Function function = Compiler.compileInnerFunction(expr, "<anon>");
     int index = mFunction.addConstant(function);
     
     // Write an op to create a closure for the function.
@@ -133,18 +121,14 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     // Do nothing if we are ignoring the result.
     if (dest == DISCARD) return dest;
     
-    // See if it's a local.
-    for (int i = 0; i < mLocals.size(); i++) {
-      if (mLocals.get(i).equals(expr.getName())) {
-        write(Op.MOVE, i, dest);
-        return dest;
-      }
+    if (expr.getName().isLocal()) {
+      write(Op.MOVE, expr.getName().getLocalIndex(), dest);
+    } else {
+      // Must be a global.
+      int name = mFunction.addConstant(expr.getName().getIdentifier());
+      write(Op.LOAD_GLOBAL, name, dest);
     }
-    
-    // Must be a global.
-    int name = mFunction.addConstant(expr.getName());
-    
-    write(Op.LOAD_GLOBAL, name, dest);
+
     return dest;
   }
 
@@ -176,10 +160,7 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
   @Override
   public Integer visit(VarExpr expr, Integer dest) {
     // Initialize the local.
-    int localRegister = mLocals.indexOf(expr.getName());
-    if (localRegister == -1) {
-      throw new RuntimeException("Could not find local " + expr.getName());
-    }
+    int localRegister = expr.getName().getLocalIndex();
     
     expr.getValue().accept(this, localRegister);
     
@@ -190,7 +171,21 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     
     return dest;
   }
+
+  private Compiler() {}
   
+  private void compile(FunctionExpr function, String name) {
+    List<String> locals = function.getLocals();
+    mFunction = new Function(name, locals);
+    
+    // Make sure we have registers for each local and one for the result.
+    mUsedRegisters = mFunction.ensureRegisters(locals.size() + 1);
+    
+    // Compile the body.
+    function.getBody().accept(this,  locals.size());
+    write(Op.RETURN,  locals.size());
+  }
+
   private int push() {
     mUsedRegisters++;
     
@@ -232,6 +227,5 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
   }
   
   private Function mFunction;
-  private List<String> mLocals;
   private int mUsedRegisters;
 }

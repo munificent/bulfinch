@@ -4,21 +4,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Finds all of the local variable definitions (including parameters) in a
- * function.
+ * Resolves all name references in a function. Modifies the AST to include
+ * resolution information, and returns the list of all local variables
+ * declared in the function.
  */
-public class LocalFinder implements ExprVisitor<Void, Void> {
-  public static List<String> getLocals(FunctionExpr function) {
+public class NameResolver implements ExprVisitor<Void, Void> {
+  public static void resolve(FunctionExpr function) {
     List<String> locals = new ArrayList<String>();
     
     locals.addAll(function.getParameters());
-    function.getBody().accept(new LocalFinder(locals), null);
-    return locals;
+    function.getBody().accept(new NameResolver(locals), null);
+    function.setLocals(locals);
   }
   
   @Override
-  public Void visit(AssignExpr expr, Void arg) {
-    // Do nothing.
+  public Void visit(AssignExpr expr, Void dummy) {
+    resolveName(expr.getName());
+    expr.getValue().accept(this, dummy);
     return null;
   }
   
@@ -37,13 +39,15 @@ public class LocalFinder implements ExprVisitor<Void, Void> {
 
   @Override
   public Void visit(FunctionExpr expr, Void arg) {
-    // Do nothing.
+    // Resolve the function itself.
+    resolve(expr);
+
     return null;
   }
 
   @Override
   public Void visit(NameExpr expr, Void arg) {
-    // Do nothing.
+    resolveName(expr.getName());
     return null;
   }
 
@@ -67,14 +71,26 @@ public class LocalFinder implements ExprVisitor<Void, Void> {
 
   @Override
   public Void visit(VarExpr expr, Void arg) {
-    mLocals.add(expr.getName());
+    mLocals.add(expr.getName().getIdentifier());
+    expr.getName().resolveLocal(mLocals.size() - 1);
+    
     expr.getValue().accept(this, arg);
     return null;
   }
 
-  private LocalFinder(List<String> locals) {
+  private NameResolver(List<String> locals) {
     mLocals = locals;
   }
   
+  private void resolveName(Name name) {
+    // See if it's a local.
+    int local = mLocals.indexOf(name.getIdentifier());
+    if (local != -1) {
+      name.resolveLocal(local);
+    } else {
+      // TODO(bob): Variables in outer scopes.
+      name.resolveGlobal();
+    }
+  }
   private final List<String> mLocals;
 }

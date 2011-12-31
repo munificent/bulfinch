@@ -3,11 +3,11 @@ package com.stuffwithstuff.bulfinch;
 public class VarExpr implements Expr {
 
   public VarExpr(String name, Expr value) {
-    mName = name;
+    mName = new Name(name);
     mValue = value;
   }
 
-  public String getName() {
+  public Name getName() {
     return mName;
   }
 
@@ -24,6 +24,6 @@ public class VarExpr implements Expr {
     return visitor.visit(this, arg);
   }
 
-  private final String mName;
+  private final Name mName;
   private final Expr mValue;
 }

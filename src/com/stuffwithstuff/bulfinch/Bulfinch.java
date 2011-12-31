@@ -44,7 +44,7 @@ public class Bulfinch {
     
     Map<String, Closure> functions = new HashMap<String, Closure>();
     for (Entry<String, FunctionExpr> entry : program.entrySet()) {
-      Function function = Compiler.compile(entry.getValue(), entry.getKey());
+      Function function = Compiler.compileTopLevel(entry.getValue(), entry.getKey());
       functions.put(entry.getKey(), new Closure(function));
     }
     

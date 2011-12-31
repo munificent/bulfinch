@@ -98,6 +98,8 @@ public class VM {
         // TODO(bob): Right now, all globals are just functions.
         String name = frame.getFunction().getConstant(op.a).toString();
         Closure closure = mFunctions.get(name);
+        if (closure == null) throw new RuntimeException("Unknown global " + name);
+        
         store(op.b, closure);
         trace("LOAD_GLOBAL", op.a, op.b);
         break;
