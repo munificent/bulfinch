@@ -57,7 +57,7 @@ public class BulfinchParser extends Parser {
   private Expr call() {
     Expr expr = primary();
     
-    if (match(TokenType.LEFT_PAREN)) {
+    while (match(TokenType.LEFT_PAREN)) {
       List<Expr> args = new ArrayList<Expr>();
       
       if (match(TokenType.RIGHT_PAREN)) {
@@ -70,7 +70,7 @@ public class BulfinchParser extends Parser {
         consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
       }
       
-      return new CallExpr(expr, args);
+      expr = new CallExpr(expr, args);
     }
     
     return expr;
