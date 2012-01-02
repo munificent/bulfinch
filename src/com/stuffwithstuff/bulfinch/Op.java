@@ -26,11 +26,20 @@ public class Op {
   // Loads a named global into a register.
   // A = index of constant containing name
   // B = dest reg
-  
-  public static final int CLOSURE = 5;
+
+  public static final int LOAD_UPVAR = 5;
+  // Loads an upvar into a register.
+  // A = index of upvar to load.
+  // B = dest reg
+
+  public static final int CLOSURE = 6;
   // Creates a new closure for the given function.
   // A = index of constant containing function
   // B = dest reg
+
+  public static final int ADD_UPVAR = 7;
+  // Pseudo-opcode for adding an to a recently created closure.
+  // A = register of variable in current function
   
   public final int opcode;
   public final int a;

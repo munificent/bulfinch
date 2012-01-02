@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class Compiler implements ExprVisitor<Integer, Integer> {
   public static Function compileTopLevel(FunctionExpr function, String name) {
-    NameResolver.resolve(function);
+    NameResolver.resolveTopLevel(function);
     return compileInnerFunction(function, name);
   }
 
@@ -113,6 +113,11 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     // Write an op to create a closure for the function.
     write(Op.CLOSURE, index, dest);
     
+    // Capture the upvars.
+    for (UpvarRef upvar : expr.getUpvars()) {
+      write(Op.ADD_UPVAR, upvar.register);
+    }
+    
     return dest;
   }
 
@@ -123,6 +128,8 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     
     if (expr.getName().isLocal()) {
       write(Op.MOVE, expr.getName().getLocalIndex(), dest);
+    } else if (expr.getName().isUpvar()) {
+      write(Op.LOAD_UPVAR, expr.getName().getUpvar().index, dest);
     } else {
       // Must be a global.
       int name = mFunction.addConstant(expr.getName().getIdentifier());
@@ -184,6 +191,8 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     // Compile the body.
     function.getBody().accept(this,  locals.size());
     write(Op.RETURN,  locals.size());
+    
+    mFunction.setNumUpvars(function.getUpvars().size());
   }
 
   private int push() {

@@ -20,10 +20,16 @@ public class FunctionExpr implements Expr {
     Expect.state(mLocals != null, "Unresolved function.");
     return mLocals;
   }
+
+  public List<UpvarRef> getUpvars() {
+    Expect.state(mUpvars != null, "Unresolved function.");
+    return mUpvars;
+  }
   
-  public void setLocals(List<String> locals) {
+  public void resolve(List<String> locals, List<UpvarRef> upvars) {
     Expect.state(mLocals == null, "Already resolved function.");
     mLocals = locals;
+    mUpvars = upvars;
   }
   
   public <A,R> R accept(ExprVisitor<A,R> visitor, A arg) {
@@ -33,4 +39,5 @@ public class FunctionExpr implements Expr {
   private final List<String> mParameters;
   private final Expr mBody;
   private List<String> mLocals;
+  private List<UpvarRef> mUpvars;
 }

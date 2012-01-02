@@ -11,33 +11,65 @@ public class Name {
   }
   
   public boolean isLocal() {
-    Expect.state(mLocalIndex != UNRESOLVED, "Unresolved name.");
+    Expect.state(mScope != Scope.UNRESOLVED, "Unresolved name.");
 
-    return mLocalIndex != GLOBAL;
+    return mScope == Scope.LOCAL;
+  }
+
+  public boolean isUpvar() {
+    Expect.state(mScope != Scope.UNRESOLVED, "Unresolved name.");
+
+    return mScope == Scope.UPVAR;
+  }
+
+  public int getLocalIndex() {
+    Expect.state(mScope != Scope.UNRESOLVED, "Unresolved name.");
+    Expect.state(mScope == Scope.LOCAL, "Non-local name.");
+    
+    return mIndex;
   }
   
-  public int getLocalIndex() {
-    Expect.state(mLocalIndex != UNRESOLVED, "Unresolved name.");
-    Expect.state(mLocalIndex != GLOBAL, "Non-local name.");
+  public UpvarRef getUpvar() {
+    Expect.state(mScope != Scope.UNRESOLVED, "Unresolved name.");
+    Expect.state(mScope == Scope.UPVAR, "Non-upvar name.");
     
-    return mLocalIndex;
+    return mUpvar;
   }
   
   public void resolveLocal(int index) {
-    Expect.state(mLocalIndex == UNRESOLVED, "Already resolved name.");
+    Expect.state(mScope == Scope.UNRESOLVED, "Already resolved name.");
 
-    mLocalIndex = index;
+    mScope = Scope.LOCAL;
+    mIndex = index;
+  }
+  
+  public void resolveUpvar(UpvarRef upvar) {
+    Expect.state(mScope == Scope.UNRESOLVED, "Already resolved name.");
+
+    mScope = Scope.UPVAR;
+    mUpvar = upvar;
   }
   
   public void resolveGlobal() {
-    Expect.state(mLocalIndex == UNRESOLVED, "Already resolved name.");
+    Expect.state(mScope == Scope.UNRESOLVED, "Already resolved name.");
     
-    mLocalIndex = GLOBAL;
+    mScope = Scope.GLOBAL;
   }
   
-  public static final int UNRESOLVED = -2;
-  public static final int GLOBAL = -1;
+  @Override
+  public String toString() {
+    return mIdentifier;
+  }
+  
+  private enum Scope {
+    UNRESOLVED,
+    LOCAL,
+    GLOBAL,
+    UPVAR
+  }
   
   private final String mIdentifier;
-  private int mLocalIndex = UNRESOLVED;
+  private Scope mScope = Scope.UNRESOLVED;
+  private int mIndex;
+  private UpvarRef mUpvar;
 }

@@ -3,6 +3,10 @@ package com.stuffwithstuff.bulfinch;
 import java.util.List;
 
 public class Upvar {
+  public Upvar(int stackIndex) {
+    mStackIndex = stackIndex;
+  }
+  
   public Object get(List<Object> stack) {
     if (isOpen()) {
       return stack.get(mStackIndex);

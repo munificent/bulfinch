@@ -48,7 +48,10 @@ public class Bulfinch {
       functions.put(entry.getKey(), new Closure(function));
     }
     
-    //dumpProgram(functions);
+    for (Entry<String, Closure> entry : functions.entrySet()) {
+      entry.getValue().getFunction().dump();
+      System.out.println();
+    }
     
     VM vm = new VM(functions);
     Object result = vm.execute();
@@ -62,15 +65,6 @@ public class Bulfinch {
       mPasses++;
     }
   }
-  
-  /*
-  private void dumpProgram(Map<String, Function> program) {
-    for (Entry<String, Function> entry : program.entrySet()) {
-      entry.getValue().dump();
-      System.out.println();
-    }
-  }
-  */
   
   private Pattern mExpectPattern = Pattern.compile("# expect: (.+)\\n");
   private int mTests = 0;

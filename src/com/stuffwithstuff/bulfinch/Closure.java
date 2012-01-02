@@ -1,5 +1,6 @@
 package com.stuffwithstuff.bulfinch;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -8,11 +9,19 @@ import java.util.List;
 public class Closure {
   public Closure(Function function) {
     mFunction = function;
-//    mUpvars = null; // TODO(bob): Do stuff.
+    mUpvars = new ArrayList<Upvar>();
   }
   
   public Function getFunction() {
     return mFunction;
+  }
+  
+  public void addUpvar(Upvar upvar) {
+    mUpvars.add(upvar);
+  }
+  
+  public Upvar getUpvar(int index) {
+    return mUpvars.get(index);
   }
   
   @Override
@@ -21,5 +30,5 @@ public class Closure {
   }
   
   private final Function mFunction;
-//  private final List<Upvar> mUpvars;
+  private final List<Upvar> mUpvars;
 }

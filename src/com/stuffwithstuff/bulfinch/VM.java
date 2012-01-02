@@ -104,16 +104,34 @@ public class VM {
         trace("LOAD_GLOBAL", op.a, op.b);
         break;
       }
+
+      case Op.LOAD_UPVAR: {
+        Upvar upvar = frame.closure.getUpvar(op.a);
+        store(op.b, upvar.get(mStack));
+        trace("LOAD_UPVAR", op.a, op.b);
+        break;
+      }
       
       case Op.CLOSURE: {
         Function function = (Function)frame.getFunction().getConstant(op.a);
-        
-        // TODO(bob): Capture upvars.
         Closure closure = new Closure(function);
+        
+        // Capture the upvars.
+        for (int i = 0; i < function.getNumUpvars(); i++) {
+          Op upvarOp = frame.getFunction().getCode().get(frame.ip++);
+          Expect.state(upvarOp.opcode == Op.ADD_UPVAR,
+              "Should have ADD_UPVAR op for each upvar.");
+          
+          closure.addUpvar(new Upvar(frame.stackStart + upvarOp.a));
+        }
+        
         store(op.b, closure);
         trace("CLOSURE", op.a, op.b);
         break;
       }
+      
+      default:
+        throw new RuntimeException("Unknown opcode " + op.opcode);
       }
     }
   }
