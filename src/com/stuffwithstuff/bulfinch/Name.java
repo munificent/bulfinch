@@ -37,6 +37,7 @@ public class Name {
   }
   
   public void resolveLocal(int index) {
+    Expect.arg(index >= 0, "Index should be non-negative.");
     Expect.state(mScope == Scope.UNRESOLVED, "Already resolved name.");
 
     mScope = Scope.LOCAL;
@@ -44,6 +45,7 @@ public class Name {
   }
   
   public void resolveUpvar(UpvarRef upvar) {
+    Expect.argNotNull(upvar, "upvar");
     Expect.state(mScope == Scope.UNRESOLVED, "Already resolved name.");
 
     mScope = Scope.UPVAR;

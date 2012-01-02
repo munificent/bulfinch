@@ -50,7 +50,6 @@ public class Bulfinch {
     
     for (Entry<String, Closure> entry : functions.entrySet()) {
       entry.getValue().getFunction().dump();
-      System.out.println();
     }
     
     VM vm = new VM(functions);

@@ -7,11 +7,16 @@ import java.util.List;
  * A compiled function.
  */
 public class Function {
-  public Function(String debugName, List<String> locals) {
+  public Function(String debugName, List<String> locals, List<String> upvarNames) {
     mDebugName = debugName;
     mLocals = locals;
+    mUpvarNames = upvarNames;
     mConstants = new ArrayList<Object>();
     mCode = new ArrayList<Op>();
+  }
+
+  public String getDebugName() {
+    return mDebugName;
   }
 
   public int addConstant(Object constant) {
@@ -24,6 +29,10 @@ public class Function {
     return mConstants.get(index);
   }
 
+  public int getNumConstants() {
+    return mConstants.size();
+  }
+  
   public int getNumRegisters() {
     return mNumRegisters;
   }
@@ -56,6 +65,19 @@ public class Function {
       }
     }
 
+    // Dump the upvars.
+    if (mUpvarNames.size() > 0) {
+      System.out.println("upvars");
+      
+      for (int i = 0; i < mNumUpvars; i++) {
+        String name = "<???>";
+        if (i < mUpvarNames.size()) {
+          name = mUpvarNames.get(i);
+        }
+        System.out.println(String.format("  %-2s : %s", i, name));
+      }
+    }
+    
     // Dump the registers.
     System.out.println("registers");
     for (int i = 0; i < mNumRegisters; i++) {
@@ -115,9 +137,23 @@ public class Function {
             prettyReg(op.a)));
         break;
 
+      case Op.ADD_OUTER_UPVAR:
+        System.out.println(String.format("    ADD_OUTER_UPVAR  %s",
+            prettyUpvar(op.a)));
+        break;
+
       default:
         System.out.println("??? Unknown opcode " + op.opcode);
         break;
+      }
+    }
+
+    System.out.println();
+
+    // Dump nested functions too.
+    for (Object constant : mConstants) {
+      if (constant instanceof Function) {
+        ((Function)constant).dump();
       }
     }
   }
@@ -146,6 +182,7 @@ public class Function {
 
   private final String mDebugName;
   private final List<String> mLocals;
+  private final List<String> mUpvarNames;
   private List<Object> mConstants;
   private List<Op> mCode;
   private int mNumRegisters;

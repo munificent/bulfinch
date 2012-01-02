@@ -130,10 +130,14 @@ public class VM {
         // Capture the upvars.
         for (int i = 0; i < function.getNumUpvars(); i++) {
           Op upvarOp = frame.getFunction().getCode().get(frame.ip++);
-          Expect.state(upvarOp.opcode == Op.ADD_UPVAR,
-              "Should have ADD_UPVAR op for each upvar.");
-          
-          closure.addUpvar(captureUpvar(frame.stackStart + upvarOp.a));
+          if (upvarOp.opcode == Op.ADD_UPVAR) {
+            closure.addUpvar(captureUpvar(frame.stackStart + upvarOp.a));
+          } else if (upvarOp.opcode == Op.ADD_OUTER_UPVAR) {
+            closure.addUpvar(frame.closure.getUpvar(upvarOp.a));
+          } else {
+            Expect.state(false,
+                "Should have ADD_UPVAR or ADD_OUTER_UPVAR op for each upvar.");
+          }
         }
         
         store(op.b, closure);

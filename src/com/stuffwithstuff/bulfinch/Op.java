@@ -43,9 +43,13 @@ public class Op {
   // B = dest reg
 
   public static final int ADD_UPVAR = 8;
-  // Pseudo-opcode for adding an to a recently created closure.
-  // A = register of variable in current function, if negative, then -index
-  // of upvar in current function
+  // Pseudo-opcode for adding an upvar to a recently created closure.
+  // A = register of variable in current function
+  
+  public static final int ADD_OUTER_UPVAR = 9;
+  // Pseudo-opcode for adding an upvar in the current function to a recently
+  // created closure.
+  // A = index of upvar in current function
   
   public final int opcode;
   public final int a;

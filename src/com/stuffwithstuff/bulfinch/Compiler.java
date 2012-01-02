@@ -1,5 +1,6 @@
 package com.stuffwithstuff.bulfinch;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -129,7 +130,8 @@ public class Compiler implements ExprVisitor<Integer> {
     if (dest == DISCARD) return;
     
     // Compile the function and add it to the constant pool.
-    Function function = Compiler.compileInnerFunction(expr, "<anon>");
+    String name = mFunction.getDebugName() + ":" + mFunction.getNumConstants();
+    Function function = Compiler.compileInnerFunction(expr, name);
     int index = mFunction.addConstant(function);
     
     // Write an op to create a closure for the function.
@@ -137,7 +139,13 @@ public class Compiler implements ExprVisitor<Integer> {
     
     // Capture the upvars.
     for (UpvarRef upvar : expr.getUpvars()) {
-      write(Op.ADD_UPVAR, upvar.register);
+      if (upvar.register >= 0) {
+        // Closing over a local.
+        write(Op.ADD_UPVAR, upvar.register);
+      } else {
+        // Closing over an upvar.
+        write(Op.ADD_OUTER_UPVAR, -1 - upvar.register);
+      }
     }
   }
 
@@ -195,7 +203,11 @@ public class Compiler implements ExprVisitor<Integer> {
   
   private void compile(FunctionExpr function, String name) {
     List<String> locals = function.getLocals();
-    mFunction = new Function(name, locals);
+    List<String> upvarNames = new ArrayList<String>();
+    for (UpvarRef upvar : function.getUpvars()) {
+      upvarNames.add(upvar.name);
+    }
+    mFunction = new Function(name, locals, upvarNames);
     
     // Make sure we have registers for each local.
     mUsedRegisters = mFunction.ensureRegisters(locals.size());

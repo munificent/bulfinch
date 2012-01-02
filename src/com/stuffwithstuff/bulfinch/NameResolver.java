@@ -77,37 +77,97 @@ public class NameResolver implements ExprVisitor<Void> {
   }
   
   private void resolveName(Name name) {
-    // See if it's a local.
-    int local = mLocals.indexOf(name.getIdentifier());
+    // TODO(bob): This could definitely be done more cleanly.
+    List<NameResolver> chain = new ArrayList<NameResolver>();
+    findName(this, name, chain);
+
+    switch (chain.size()) {
+    case 0:
+      // Must be a global.
+      name.resolveGlobal();
+      break;
+      
+    case 1:
+      // Local.
+      // TODO(bob): Include this index info in result of findName.
+      name.resolveLocal(mLocals.indexOf(name.getIdentifier()));
+      break;
+      
+    default:
+      // Defined in enclosing scope.
+      UpvarRef upvar = null;
+      
+      for (int i = 1; i < chain.size(); i++) {
+        NameResolver resolver = chain.get(i);
+        
+        // See if we've already added it to this scope's closure.
+        boolean alreadyAdded = false;
+        for (int index = 0; index < resolver.mUpvars.size(); index++) {
+          if (resolver.mUpvars.get(index).name.equals(name.getIdentifier())) {
+            alreadyAdded = true;
+            upvar = resolver.mUpvars.get(index);
+            break;
+          }
+        }
+        if (alreadyAdded) continue;
+        
+        // Close over it in this scope.
+        NameResolver outer = chain.get(i - 1);
+        
+        if (i == 1) {
+          // Closing over a local in the outer scope.
+          int local = outer.mLocals.indexOf(name.getIdentifier());
+          upvar = new UpvarRef(name.getIdentifier(),
+              resolver.mUpvars.size(), local);
+        } else {
+          // Closing over an upvar in the outer scope. (I.e. closing over a
+          // variable not defined in the immediate outer scope.)
+          upvar = null;
+          
+          for (int index = 0; index < outer.mUpvars.size(); index++) {
+            if (outer.mUpvars.get(index).name.equals(name.getIdentifier())) {
+              // Negative to distinguish closing over local versus upvar.
+              upvar = new UpvarRef(name.getIdentifier(),
+                  resolver.mUpvars.size(), -1 - index);
+              break;
+            }
+          }
+          
+          Expect.state(upvar != null, "Couldn't finding matching upvar.");
+        }
+
+        resolver.mUpvars.add(upvar);
+      }
+
+      // Resolve the name to the final upvar.
+      name.resolveUpvar(upvar);
+      break;
+    }
+  }
+  
+  /**
+   * Finds which outer scope a given name is defined in. If found, it will
+   * fill chain with all of the scopes from where it was defined to this one
+   * (inclusive). If the name isn't found, chain will be left empty.
+   */
+  private void findName(NameResolver function, Name name, List<NameResolver> chain) {
+    int local = function.mLocals.indexOf(name.getIdentifier());
     if (local != -1) {
-      name.resolveLocal(local);
+      // Found it!
+      chain.add(function);
       return;
     }
-
-    // See if it's a known upvar.
-    for (int upvar = 0; upvar < mUpvars.size(); upvar++) {
-      if (mUpvars.get(upvar).name.equals(name.getIdentifier())) {
-        name.resolveUpvar(mUpvars.get(upvar));
-        return;
-      }
+    
+    if (function.mOuterFunction == null) return;
+    
+    // Recurse upwards.
+    findName(function.mOuterFunction, name, chain);
+    if (chain.size() > 0) {
+      // We found it, so add our link to the chain.
+      chain.add(function);
     }
     
-    // See if it's a new upvar (a variable defined in the enclosing function).
-    if (mOuterFunction != null) {
-      int outer = mOuterFunction.mLocals.indexOf(name.getIdentifier());
-      if (outer != -1) {
-        // Create a new upvar slot for it.
-        UpvarRef upvar = new UpvarRef(name.getIdentifier(), mUpvars.size(), outer);
-        mUpvars.add(upvar);
-        name.resolveUpvar(upvar);
-        return;
-      }
-    }
-    
-    // TODO(bob): Variables in outer scopes beyond the immediately enclosing fn.
-    
-    // Must be a global.
-    name.resolveGlobal();
+    return;
   }
   
   private final NameResolver mOuterFunction;
