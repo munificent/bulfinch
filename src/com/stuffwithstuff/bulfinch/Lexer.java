@@ -89,10 +89,6 @@ public class Lexer {
           startToken(LexState.IN_KEYWORD);
           break;
 
-        case '-':
-          startToken(LexState.IN_MINUS);
-          break;
-
         case '\n':
         case '\r':
           return singleCharToken(TokenType.LINE);
@@ -109,8 +105,6 @@ public class Lexer {
             startToken(LexState.IN_NAME);
           } else if (isOperator(c)) {
             startToken(LexState.IN_OPERATOR);
-          } else if (isDigit(c)) {
-            startToken(LexState.IN_NUMBER);
           } else {
             // ### bob: hack temp. unexpected character
             return new Token(TokenType.EOF);
@@ -142,34 +136,6 @@ public class Lexer {
           mIndex++;
         } else {
           return createStringToken(TokenType.KEYWORD);
-        }
-        break;
-
-      case IN_NUMBER:
-        if (isDigit(c)) {
-          mIndex++;
-        } else if (c == '.') {
-          changeToken(LexState.IN_DECIMAL);
-        } else {
-          return createNumToken(TokenType.NUMBER);
-        }
-        break;
-
-      case IN_DECIMAL:
-        if (isDigit(c)) {
-          mIndex++;
-        } else {
-          return createNumToken(TokenType.NUMBER);
-        }
-        break;
-
-      case IN_MINUS:
-        if (isDigit(c)) {
-          changeToken(LexState.IN_NUMBER);
-        } else if (isOperator(c) || isAlpha(c)) {
-          changeToken(LexState.IN_OPERATOR);
-        } else {
-          return createStringToken(TokenType.OPERATOR);
         }
         break;
 
@@ -235,13 +201,6 @@ public class Lexer {
     return new Token(type, text);
   }
 
-  private Token createNumToken(TokenType type) {
-    String text = mText.substring(mTokenStart, mIndex);
-    double value = Double.parseDouble(text);
-    mState = LexState.DEFAULT;
-    return new Token(type, value);
-  }
-
   private boolean isAlpha(final char c) {
     return ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))
         || (c == '_') || (c == '\'');
@@ -256,7 +215,7 @@ public class Lexer {
   }
 
   private enum LexState {
-    DEFAULT, IN_NAME, IN_OPERATOR, IN_KEYWORD, IN_NUMBER, IN_DECIMAL, IN_MINUS, IN_STRING, IN_COMMENT
+    DEFAULT, IN_NAME, IN_OPERATOR, IN_KEYWORD, IN_STRING, IN_COMMENT
   }
 
   private final String mText;

@@ -5,5 +5,5 @@ fn foo(a, b, c) {
 }
 
 fn main() {
-  foo(3, 4, 5)
+  foo("3", "4", "5")
 }

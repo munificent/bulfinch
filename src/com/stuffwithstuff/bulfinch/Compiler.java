@@ -86,11 +86,6 @@ public class Compiler implements ExprVisitor<Integer> {
       }
     }
   }
-  
-  @Override
-  public void visit(BoolExpr expr, Integer dest) {
-    compileConstant(expr.getValue(), dest);
-  }
 
   @Override
   public void visit(CallExpr expr, Integer dest) {
@@ -163,11 +158,6 @@ public class Compiler implements ExprVisitor<Integer> {
       int name = mFunction.addConstant(expr.getName().getIdentifier());
       write(Op.LOAD_GLOBAL, name, dest);
     }
-  }
-
-  @Override
-  public void visit(NumberExpr expr, Integer dest) {
-    compileConstant(expr.getValue(), dest);
   }
 
   @Override

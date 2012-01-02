@@ -79,11 +79,6 @@ public class BulfinchParser extends Parser {
   private Expr primary() {
     if (match(TokenType.NAME)) {
       String name = getMatch()[0].getString();
-
-      // check for reserved names
-      if (name.equals("true")) return new BoolExpr(true);
-      if (name.equals("false")) return new BoolExpr(false);
-
       return new NameExpr(name);
 
     } else if (match(TokenType.VAR)) {
@@ -97,9 +92,6 @@ public class BulfinchParser extends Parser {
       Expr body = parseBody();
       return new FunctionExpr(params, body);
       
-    } else if (match(TokenType.NUMBER)) {
-      return new NumberExpr(getMatch()[0].getDouble());
-
     } else if (match(TokenType.STRING)) {
       return new StringExpr(getMatch()[0].getString());
 

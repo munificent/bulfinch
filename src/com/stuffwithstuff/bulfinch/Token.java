@@ -4,19 +4,11 @@ public final class Token {
   public Token(final TokenType type) {
     mType = type;
     mStringValue = "";
-    mDoubleValue = 0;
   }
 
   public Token(final TokenType type, final String value) {
     mType = type;
     mStringValue = value;
-    mDoubleValue = 0;
-  }
-
-  public Token(final TokenType type, final double value) {
-    mType = type;
-    mStringValue = "";
-    mDoubleValue = value;
   }
 
   public TokenType getType() {
@@ -25,10 +17,6 @@ public final class Token {
 
   public String getString() {
     return mStringValue;
-  }
-
-  public double getDouble() {
-    return mDoubleValue;
   }
 
   public String toString() {
@@ -61,8 +49,6 @@ public final class Token {
     case KEYWORD:
       return mStringValue + " (keyword)";
 
-    case NUMBER:
-      return Double.toString(mDoubleValue);
     case STRING:
       return "\"" + mStringValue + "\"";
 
@@ -76,5 +62,4 @@ public final class Token {
 
   private final TokenType mType;
   private final String mStringValue;
-  private final double mDoubleValue;
 }

@@ -18,7 +18,6 @@ public enum TokenType {
   VAR,
   FN,
   
-  NUMBER,
   STRING,
   
   LINE,

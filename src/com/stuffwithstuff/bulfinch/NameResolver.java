@@ -26,11 +26,6 @@ public class NameResolver implements ExprVisitor<Void> {
   }
   
   @Override
-  public void visit(BoolExpr expr, Void arg) {
-    // Do nothing.
-  }
-
-  @Override
   public void visit(CallExpr expr, Void dummy) {
     expr.getFunction().accept(this, dummy);
     for (Expr arg : expr.getArgs()) arg.accept(this, dummy);
@@ -45,11 +40,6 @@ public class NameResolver implements ExprVisitor<Void> {
   @Override
   public void visit(NameExpr expr, Void arg) {
     resolveName(expr.getName());
-  }
-
-  @Override
-  public void visit(NumberExpr expr, Void arg) {
-    // Do nothing.
   }
 
   @Override

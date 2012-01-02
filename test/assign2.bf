@@ -7,6 +7,6 @@ fn main() {
   var a = "a"
   var b = "b"
   var c = "c"
-  b = foo(1, 2, 3) # make sure this assignment doesn't step on c
+  b = foo("1", "2", "3") # make sure this assignment doesn't step on c
   c
 }
