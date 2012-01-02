@@ -20,8 +20,8 @@ public class AssignExpr implements Expr {
     return mName + " = " + mValue.toString();
   }
 
-  public <A,R> R accept(ExprVisitor<A,R> visitor, A arg) {
-    return visitor.visit(this, arg);
+  public <A> void accept(ExprVisitor<A> visitor, A arg) {
+    visitor.visit(this, arg);
   }
 
   private final Name mName;

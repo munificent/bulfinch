@@ -16,8 +16,8 @@ public class NumberExpr implements Expr {
     return sFormat.format(mValue);
   }
 
-  public <A,R> R accept(ExprVisitor<A,R> visitor, A arg) {
-    return visitor.visit(this, arg);
+  public <A> void accept(ExprVisitor<A> visitor, A arg) {
+    visitor.visit(this, arg);
   }
 
   private static final NumberFormat sFormat;

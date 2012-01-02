@@ -30,7 +30,7 @@ import java.util.List;
  * allow variable declarations inside calls, we could allocate local variable
  * registers incrementally as they are evaluated in the function.
  */
-public class Compiler implements ExprVisitor<Integer, Integer> {
+public class Compiler implements ExprVisitor<Integer> {
   public static Function compileTopLevel(FunctionExpr function, String name) {
     NameResolver.resolveTopLevel(function);
     return compileInnerFunction(function, name);
@@ -51,7 +51,7 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
   private static final int DISCARD = -1;
   
   @Override
-  public Integer visit(AssignExpr expr, Integer dest) {
+  public void visit(AssignExpr expr, Integer dest) {
     if (expr.getName().isLocal()) {
       int register = expr.getName().getLocalIndex();
       
@@ -84,18 +84,15 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
         pop(register);
       }
     }
-    
-    return dest;
   }
   
   @Override
-  public Integer visit(BoolExpr expr, Integer dest) {
+  public void visit(BoolExpr expr, Integer dest) {
     compileConstant(expr.getValue(), dest);
-    return dest;
   }
 
   @Override
-  public Integer visit(CallExpr expr, Integer dest) {
+  public void visit(CallExpr expr, Integer dest) {
     // If we don't have a destination to put the result, make a temp one.
     int register = dest;
     if (register == DISCARD) {
@@ -124,14 +121,12 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     if (dest == DISCARD) {
       pop(register);
     }
-    
-    return dest;
   }
 
   @Override
-  public Integer visit(FunctionExpr expr, Integer dest) {
+  public void visit(FunctionExpr expr, Integer dest) {
     // Don't load the function if we aren't loading it into anything.
-    if (dest == DISCARD) return dest;
+    if (dest == DISCARD) return;
     
     // Compile the function and add it to the constant pool.
     Function function = Compiler.compileInnerFunction(expr, "<anon>");
@@ -144,14 +139,12 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     for (UpvarRef upvar : expr.getUpvars()) {
       write(Op.ADD_UPVAR, upvar.register);
     }
-    
-    return dest;
   }
 
   @Override
-  public Integer visit(NameExpr expr, Integer dest) {
+  public void visit(NameExpr expr, Integer dest) {
     // Do nothing if we are ignoring the result.
-    if (dest == DISCARD) return dest;
+    if (dest == DISCARD) return;
     
     if (expr.getName().isLocal()) {
       write(Op.MOVE, expr.getName().getLocalIndex(), dest);
@@ -162,18 +155,15 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
       int name = mFunction.addConstant(expr.getName().getIdentifier());
       write(Op.LOAD_GLOBAL, name, dest);
     }
-
-    return dest;
   }
 
   @Override
-  public Integer visit(NumberExpr expr, Integer dest) {
+  public void visit(NumberExpr expr, Integer dest) {
     compileConstant(expr.getValue(), dest);
-    return dest;
   }
 
   @Override
-  public Integer visit(SequenceExpr sequence, Integer dest) {
+  public void visit(SequenceExpr sequence, Integer dest) {
     for (int i = 0; i < sequence.getExpressions().size(); i++) {
       Expr expr = sequence.getExpressions().get(i);
       // Discard the results of all but the last expression in the sequence.
@@ -181,18 +171,15 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
       if (i < sequence.getExpressions().size() - 1) thisDest = DISCARD;
       expr.accept(this, thisDest);
     }
-    
-    return dest;
   }
 
   @Override
-  public Integer visit(StringExpr expr, Integer dest) {
+  public void visit(StringExpr expr, Integer dest) {
     compileConstant(expr.getValue(), dest);
-    return dest;
   }
 
   @Override
-  public Integer visit(VarExpr expr, Integer dest) {
+  public void visit(VarExpr expr, Integer dest) {
     // Initialize the local.
     int localRegister = expr.getName().getLocalIndex();
     
@@ -202,8 +189,6 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     if ((dest != DISCARD) && (localRegister != dest)) {
       write(Op.MOVE, localRegister, dest);
     }
-    
-    return dest;
   }
 
   private Compiler() {}
