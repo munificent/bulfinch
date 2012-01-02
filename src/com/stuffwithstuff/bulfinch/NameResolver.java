@@ -75,25 +75,25 @@ public class NameResolver implements ExprVisitor<Void> {
     mLocals = new ArrayList<String>();
     mUpvars = new ArrayList<UpvarRef>();
   }
+
   
+  int findUpvar(List<UpvarRef> upvars, Name name) {
+    for (int index = 0; index < upvars.size(); index++) {
+      if (upvars.get(index).name.equals(name.getIdentifier())) {
+        return index;
+      }
+    }
+    
+    // Not found.
+    return -1;
+  }
+
   private void resolveName(Name name) {
     // TODO(bob): This could definitely be done more cleanly.
     List<NameResolver> chain = new ArrayList<NameResolver>();
     findName(this, name, chain);
 
-    switch (chain.size()) {
-    case 0:
-      // Must be a global.
-      name.resolveGlobal();
-      break;
-      
-    case 1:
-      // Local.
-      // TODO(bob): Include this index info in result of findName.
-      name.resolveLocal(mLocals.indexOf(name.getIdentifier()));
-      break;
-      
-    default:
+    if (chain.size() > 1) {
       // Defined in enclosing scope.
       UpvarRef upvar = null;
       
@@ -101,15 +101,11 @@ public class NameResolver implements ExprVisitor<Void> {
         NameResolver resolver = chain.get(i);
         
         // See if we've already added it to this scope's closure.
-        boolean alreadyAdded = false;
-        for (int index = 0; index < resolver.mUpvars.size(); index++) {
-          if (resolver.mUpvars.get(index).name.equals(name.getIdentifier())) {
-            alreadyAdded = true;
-            upvar = resolver.mUpvars.get(index);
-            break;
-          }
+        int existing = findUpvar(resolver.mUpvars, name);
+        if (existing != -1) {
+          upvar = resolver.mUpvars.get(existing);
+          continue;
         }
-        if (alreadyAdded) continue;
         
         // Close over it in this scope.
         NameResolver outer = chain.get(i - 1);
@@ -122,18 +118,12 @@ public class NameResolver implements ExprVisitor<Void> {
         } else {
           // Closing over an upvar in the outer scope. (I.e. closing over a
           // variable not defined in the immediate outer scope.)
-          upvar = null;
-          
-          for (int index = 0; index < outer.mUpvars.size(); index++) {
-            if (outer.mUpvars.get(index).name.equals(name.getIdentifier())) {
-              // Negative to distinguish closing over local versus upvar.
-              upvar = new UpvarRef(name.getIdentifier(),
-                  resolver.mUpvars.size(), -1 - index);
-              break;
-            }
-          }
-          
-          Expect.state(upvar != null, "Couldn't finding matching upvar.");
+          int index = findUpvar(outer.mUpvars, name);
+          Expect.state(index >= 0, "Couldn't finding matching upvar.");
+
+          // Negative to distinguish closing over local versus upvar.
+          upvar = new UpvarRef(name.getIdentifier(),
+              resolver.mUpvars.size(), -1 - index);
         }
 
         resolver.mUpvars.add(upvar);
@@ -141,7 +131,6 @@ public class NameResolver implements ExprVisitor<Void> {
 
       // Resolve the name to the final upvar.
       name.resolveUpvar(upvar);
-      break;
     }
   }
   
@@ -150,24 +139,38 @@ public class NameResolver implements ExprVisitor<Void> {
    * fill chain with all of the scopes from where it was defined to this one
    * (inclusive). If the name isn't found, chain will be left empty.
    */
-  private void findName(NameResolver function, Name name, List<NameResolver> chain) {
+  private boolean findName(NameResolver function, Name name, List<NameResolver> chain) {
+    // See if the name is defined here.
     int local = function.mLocals.indexOf(name.getIdentifier());
     if (local != -1) {
+      // If it is defined in the current scope, resolve it as local.
+      if (function == this) {
+        name.resolveLocal(local);
+        return false;
+      }
+      
       // Found it!
       chain.add(function);
-      return;
+      return true;
     }
     
-    if (function.mOuterFunction == null) return;
+    if (function.mOuterFunction == null) {
+      // If we got here, we couldn't find the name in any scope, so we'll
+      // assume it's global.
+      name.resolveGlobal();
+      return false;
+    }
     
     // Recurse upwards.
-    findName(function.mOuterFunction, name, chain);
-    if (chain.size() > 0) {
+    boolean found = findName(function.mOuterFunction, name, chain);
+    if (found) {
+      // TODO(bob): Get rid of explicit chain and just move code from
+      // resolveName() into here.
       // We found it, so add our link to the chain.
       chain.add(function);
     }
     
-    return;
+    return found;
   }
   
   private final NameResolver mOuterFunction;
