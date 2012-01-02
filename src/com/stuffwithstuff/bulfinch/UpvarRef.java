@@ -12,7 +12,7 @@ public class UpvarRef {
   // The index of this upvar in the function's upvar list.
   public final int index;
   
-  // The index of the registar that the upvar is bound to in the outer function.
+  // The index of the register that the upvar is bound to in the outer function.
   public final int register;
   
   // TODO(bob): Upvars that reference upvars in the outer function (i.e. vars

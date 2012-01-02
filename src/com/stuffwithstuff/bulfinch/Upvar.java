@@ -23,6 +23,18 @@ public class Upvar {
     }
   }
   
+  public void close(List<Object> stack) {
+    // Capture the value.
+    mValue = stack.get(mStackIndex);
+    
+    // Detach from the stack.
+    mStackIndex = -1;
+  }
+  
+  int getIndex() {
+    return mStackIndex;
+  }
+  
   boolean isOpen() {
     return mStackIndex != -1;
   }

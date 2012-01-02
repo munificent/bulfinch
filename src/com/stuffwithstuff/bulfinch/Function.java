@@ -100,6 +100,11 @@ public class Function {
             prettyUpvar(op.a), prettyReg(op.b)));
         break;
 
+      case Op.STORE_UPVAR:
+        System.out.println(String.format("  STORE_UPVAR  %s <- %s",
+            prettyUpvar(op.a), prettyReg(op.b)));
+        break;
+
       case Op.CLOSURE:
         System.out.println(String.format("  CLOSURE      %s -> %s",
             prettyConst(op.a), prettyReg(op.b)));

@@ -29,17 +29,23 @@ public class Op {
 
   public static final int LOAD_UPVAR = 5;
   // Loads an upvar into a register.
-  // A = index of upvar to load.
+  // A = index of upvar to load
   // B = dest reg
 
-  public static final int CLOSURE = 6;
+  public static final int STORE_UPVAR = 6;
+  // Stores a register into an upvar.
+  // A = index of upvar to store
+  // B = source reg
+  
+  public static final int CLOSURE = 7;
   // Creates a new closure for the given function.
   // A = index of constant containing function
   // B = dest reg
 
-  public static final int ADD_UPVAR = 7;
+  public static final int ADD_UPVAR = 8;
   // Pseudo-opcode for adding an to a recently created closure.
-  // A = register of variable in current function
+  // A = register of variable in current function, if negative, then -index
+  // of upvar in current function
   
   public final int opcode;
   public final int a;

@@ -73,6 +73,14 @@ public class VM {
         
         CallFrame caller = mFrames.peek();
 
+        // Close an upvars for the frame.
+        for (int i = mOpenUpvars.size() - 1; i >= 0; i--) {
+          if (mOpenUpvars.get(i).getIndex() >= frame.stackStart) {
+            mOpenUpvars.get(i).close(mStack);
+            mOpenUpvars.remove(i);
+          }
+        }
+        
         // Discard the returning function's registers.
         while (mStack.size() > caller.stackStart +
             caller.getFunction().getNumRegisters()) {
@@ -83,13 +91,9 @@ public class VM {
         // instruction.
         // - 1 because we've already advanced past the CALL.
         int dest = caller.getFunction().getCode().get(caller.ip - 1).a;
-        
-        // If the destination register is -1 that means it's result is being
-        // discarded, so don't store anything.
-        if (dest != -1) {
-          int register = caller.stackStart + dest;
-          mStack.set(register, result);
-        }
+        int register = caller.stackStart + dest;
+        mStack.set(register, result);
+
         trace("RETURN", op.a);
         break;
       }
@@ -111,6 +115,13 @@ public class VM {
         trace("LOAD_UPVAR", op.a, op.b);
         break;
       }
+
+      case Op.STORE_UPVAR: {
+        Upvar upvar = frame.closure.getUpvar(op.a);
+        upvar.set(mStack, load(op.b));
+        trace("STORE_UPVAR", op.a, op.b);
+        break;
+      }
       
       case Op.CLOSURE: {
         Function function = (Function)frame.getFunction().getConstant(op.a);
@@ -122,7 +133,7 @@ public class VM {
           Expect.state(upvarOp.opcode == Op.ADD_UPVAR,
               "Should have ADD_UPVAR op for each upvar.");
           
-          closure.addUpvar(new Upvar(frame.stackStart + upvarOp.a));
+          closure.addUpvar(captureUpvar(frame.stackStart + upvarOp.a));
         }
         
         store(op.b, closure);
@@ -142,6 +153,18 @@ public class VM {
 
   private Object store(int register, Object value) {
     return mStack.set(mFrames.peek().stackStart + register, value);
+  }
+  
+  private Upvar captureUpvar(int stackIndex) {
+    // See if we already have an open upvar for that variable.
+    for (Upvar upvar : mOpenUpvars) {
+      if (upvar.getIndex() == stackIndex) return upvar;
+    }
+    
+    // Not closed over already, so create it.
+    Upvar upvar = new Upvar(stackIndex);
+    mOpenUpvars.add(upvar);
+    return upvar;
   }
 
   private void trace(String op, int a, int b, int c) {
@@ -176,4 +199,5 @@ public class VM {
   private final Map<String, Closure> mFunctions;
   private final List<Object> mStack = new ArrayList<Object>();
   private final Stack<CallFrame> mFrames = new Stack<CallFrame>();
+  private final List<Upvar> mOpenUpvars = new ArrayList<Upvar>();
 }

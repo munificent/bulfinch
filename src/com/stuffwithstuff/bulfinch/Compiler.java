@@ -52,19 +52,37 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
   
   @Override
   public Integer visit(AssignExpr expr, Integer dest) {
-    int register = expr.getName().getLocalIndex();
-    
-    // Assign the value to the local.
-    expr.getValue().accept(this, register);
-    
-    // If we have another destination, copy there too. This would be something
-    // like:
-    //
-    //   foo(a = 1)
-    //
-    // where we want to assign to 'a' but also use the value as an argument.
-    if ((dest != DISCARD) && (register != dest)) {
-      write(Op.MOVE, register, dest);
+    if (expr.getName().isLocal()) {
+      int register = expr.getName().getLocalIndex();
+      
+      // Assign the value to the local.
+      expr.getValue().accept(this, register);
+      
+      // If we have another destination, copy there too. This would be something
+      // like:
+      //
+      //   foo(a = 1)
+      //
+      // where we want to assign to 'a' but also use the value as an argument.
+      if ((dest != DISCARD) && (register != dest)) {
+        write(Op.MOVE, register, dest);
+      }
+    } else if (expr.getName().isUpvar()) {
+      // Get a temp register to store the value in if we don't already have one.
+      int register = dest;
+      if (register == DISCARD) {
+        register = push();
+      }
+      
+      // Evaluate the value and store it in a register.
+      expr.getValue().accept(this, register);
+      
+      // Assign to the upvar.
+      write(Op.STORE_UPVAR, expr.getName().getUpvar().index, register);
+      
+      if (dest == DISCARD) {
+        pop(register);
+      }
     }
     
     return dest;
@@ -78,6 +96,12 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
 
   @Override
   public Integer visit(CallExpr expr, Integer dest) {
+    // If we don't have a destination to put the result, make a temp one.
+    int register = dest;
+    if (register == DISCARD) {
+      register = push();
+    }
+    
     // Load the function.
     int fn = push();
     expr.getFunction().accept(this, fn);
@@ -89,14 +113,17 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     }
     
     // Call it.
-    // TODO(bob): What if dest == -1?
-    write(Op.CALL, dest, fn, expr.getArgs().size());
+    write(Op.CALL, register, fn, expr.getArgs().size());
     
     for (int i = 0; i < expr.getArgs().size(); i++) {
       pop();
     }
     
     pop(fn);
+    
+    if (dest == DISCARD) {
+      pop(register);
+    }
     
     return dest;
   }
@@ -185,12 +212,16 @@ public class Compiler implements ExprVisitor<Integer, Integer> {
     List<String> locals = function.getLocals();
     mFunction = new Function(name, locals);
     
-    // Make sure we have registers for each local and one for the result.
-    mUsedRegisters = mFunction.ensureRegisters(locals.size() + 1);
-    
+    // Make sure we have registers for each local.
+    mUsedRegisters = mFunction.ensureRegisters(locals.size());
+
+    int resultRegister = push();
+
     // Compile the body.
-    function.getBody().accept(this,  locals.size());
-    write(Op.RETURN,  locals.size());
+    function.getBody().accept(this,  resultRegister);
+    write(Op.RETURN, resultRegister);
+    
+    pop(resultRegister);
     
     mFunction.setNumUpvars(function.getUpvars().size());
   }
