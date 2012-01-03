@@ -79,7 +79,7 @@ public class Compiler implements ExprVisitor<Integer> {
       expr.getValue().accept(this, register);
       
       // Assign to the upvar.
-      write(Op.STORE_UPVAR, expr.getName().getUpvar().index, register);
+      write(Op.STORE_UPVAR, expr.getName().getUpvar().getSlot(), register);
       
       if (dest == DISCARD) {
         pop(register);
@@ -134,12 +134,12 @@ public class Compiler implements ExprVisitor<Integer> {
     
     // Capture the upvars.
     for (UpvarRef upvar : expr.getUpvars()) {
-      if (upvar.register >= 0) {
+      if (upvar.isLocal()) {
         // Closing over a local.
-        write(Op.ADD_UPVAR, upvar.register);
+        write(Op.ADD_UPVAR, upvar.getIndex());
       } else {
         // Closing over an upvar.
-        write(Op.ADD_OUTER_UPVAR, -1 - upvar.register);
+        write(Op.ADD_OUTER_UPVAR, upvar.getIndex());
       }
     }
   }
@@ -152,7 +152,7 @@ public class Compiler implements ExprVisitor<Integer> {
     if (expr.getName().isLocal()) {
       write(Op.MOVE, expr.getName().getLocalIndex(), dest);
     } else if (expr.getName().isUpvar()) {
-      write(Op.LOAD_UPVAR, expr.getName().getUpvar().index, dest);
+      write(Op.LOAD_UPVAR, expr.getName().getUpvar().getSlot(), dest);
     } else {
       // Must be a global.
       int name = mFunction.addConstant(expr.getName().getIdentifier());
@@ -195,7 +195,7 @@ public class Compiler implements ExprVisitor<Integer> {
     List<String> locals = function.getLocals();
     List<String> upvarNames = new ArrayList<String>();
     for (UpvarRef upvar : function.getUpvars()) {
-      upvarNames.add(upvar.name);
+      upvarNames.add(upvar.getName());
     }
     mFunction = new Function(name, locals, upvarNames);
     

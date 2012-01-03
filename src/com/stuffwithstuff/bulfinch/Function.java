@@ -176,7 +176,10 @@ public class Function {
   }
   
   private String prettyUpvar(int upvar) {
-    // TODO(bob): Include names for upvars for logging.
+    if (upvar < mUpvarNames.size()) {
+      return String.format("%s (%s)", upvar, mUpvarNames.get(upvar));
+    }
+
     return String.format("%s", upvar);
   }
 
