@@ -35,13 +35,25 @@ public class BulfinchParser extends Parser {
       if (isMatch(TokenType.RIGHT_BRACKET)) break;
       if (isMatch(TokenType.EOF)) break;
 
-      exprs.add(assign());
+      exprs.add(flowControl());
     } while (match(TokenType.LINE));
 
     // only create a list if we actually had a ;
     if (exprs.size() == 1) return exprs.get(0);
 
     return new SequenceExpr(exprs);
+  }
+  
+  private Expr flowControl() {
+    if (match(TokenType.IF)) {
+      Expr condition = assign();
+      Expr thenArm = parseBody();
+      consume(TokenType.ELSE, "Expect 'else' after if arm.");
+      Expr elseArm = parseBody();
+      return new IfExpr(condition, thenArm, elseArm);
+    }
+    
+    return assign();
   }
   
   private Expr assign() {

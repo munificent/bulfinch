@@ -97,7 +97,27 @@ public class VM {
         trace("RETURN", op.a);
         break;
       }
-
+      
+      case Op.JUMP: {
+        frame.ip += op.a;
+        trace("JUMP", op.a);
+        break;
+      }
+      
+      case Op.JUMP_IF_FALSE: {
+        Object condition = load(op.a);
+        boolean truthy = false;
+        if (condition instanceof String) {
+          truthy = !condition.equals("");
+        }
+        
+        if (!truthy) {
+          frame.ip += op.b;
+        }
+        trace("JUMP_IF_FALSE", op.a, op.b);
+        break;
+      }
+      
       case Op.LOAD_GLOBAL: {
         // TODO(bob): Right now, all globals are just functions.
         String name = frame.getFunction().getConstant(op.a).toString();

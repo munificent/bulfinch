@@ -194,8 +194,10 @@ public class Lexer {
     
     // Handle reserved words.
     if (type == TokenType.NAME) {
-      if (text.equals("var")) type = TokenType.VAR;
+      if (text.equals("else")) type = TokenType.ELSE;
       if (text.equals("fn")) type = TokenType.FN;
+      if (text.equals("if")) type = TokenType.IF;
+      if (text.equals("var")) type = TokenType.VAR;
     }
     
     return new Token(type, text);

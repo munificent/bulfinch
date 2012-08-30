@@ -15,8 +15,10 @@ public enum TokenType {
   OPERATOR,
   KEYWORD,
 
-  VAR,
+  ELSE,
   FN,
+  IF,
+  VAR,
   
   STRING,
   

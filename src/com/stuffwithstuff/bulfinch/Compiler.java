@@ -145,6 +145,18 @@ public class Compiler implements ExprVisitor<Integer> {
   }
 
   @Override
+  public void visit(IfExpr expr, Integer dest) {
+    expr.getCondition().accept(this, dest);
+    
+    int jumpToElse = startJump();
+    expr.getThenArm().accept(this, dest);
+    int jumpOverElse = startJump();
+    endJumpIfFalse(jumpToElse, dest);
+    expr.getElseArm().accept(this, dest);
+    endJump(jumpOverElse);
+  }
+
+  @Override
   public void visit(NameExpr expr, Integer dest) {
     // Do nothing if we are ignoring the result.
     if (dest == DISCARD) return;
@@ -246,6 +258,24 @@ public class Compiler implements ExprVisitor<Integer> {
     mFunction.getCode().add(new Op(op, a));
   }
 
+  private int startJump() {
+    // Insert a placeholder op.
+    mFunction.getCode().add(new Op(-1));
+    return mFunction.getCode().size() - 1;
+  }
+  
+  private void endJump(int jump) {
+    // -1 because the IP has already been advanced one.
+    int offset = mFunction.getCode().size() - jump - 1;
+    mFunction.getCode().set(jump, new Op(Op.JUMP, offset));
+  }
+  
+  private void endJumpIfFalse(int jump, int condition) {
+    // -1 because the IP has already been advanced one.
+    int offset = mFunction.getCode().size() - jump - 1;
+    mFunction.getCode().set(jump, new Op(Op.JUMP_IF_FALSE, condition, offset));
+  }
+  
   private void compileConstant(Object value, int dest) {
     // Don't load the constant if we aren't loading it into anything.
     if (dest == DISCARD) return;

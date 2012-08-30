@@ -94,46 +94,54 @@ public class Function {
       Op op = mCode.get(i);
       switch (op.opcode) {
       case Op.CONSTANT:
-        System.out.println(String.format("  CONSTANT     %s -> %s",
+        System.out.println(String.format("  CONSTANT      %s -> %s",
             prettyConst(op.a), prettyReg(op.b)));
         break;
 
       case Op.MOVE:
-        System.out.println(String.format("  MOVE         %s -> %s",
+        System.out.println(String.format("  MOVE          %s -> %s",
             prettyReg(op.a), prettyReg(op.b)));
         break;
 
       case Op.CALL:
-        System.out.println(String.format("  CALL         %s <- %s %s",
+        System.out.println(String.format("  CALL          %s <- %s %s",
             prettyReg(op.a), op.b, op.c));
         break;
 
       case Op.RETURN:
-        System.out.println(String.format("  RETURN       %s", prettyReg(op.a)));
+        System.out.println(String.format("  RETURN        %s", prettyReg(op.a)));
+        break;
+
+      case Op.JUMP:
+        System.out.println(String.format("  JUMP          %s", op.a));
+        break;
+
+      case Op.JUMP_IF_FALSE:
+        System.out.println(String.format("  JUMP_IF_FALSE %s %s", prettyReg(op.a), op.b));
         break;
 
       case Op.LOAD_GLOBAL:
-        System.out.println(String.format("  LOAD_GLOBAL  %s -> %s",
+        System.out.println(String.format("  LOAD_GLOBAL   %s -> %s",
             prettyConst(op.a), prettyReg(op.b)));
         break;
 
       case Op.LOAD_UPVAR:
-        System.out.println(String.format("  LOAD_UPVAR   %s -> %s",
+        System.out.println(String.format("  LOAD_UPVAR    %s -> %s",
             prettyUpvar(op.a), prettyReg(op.b)));
         break;
 
       case Op.STORE_UPVAR:
-        System.out.println(String.format("  STORE_UPVAR  %s <- %s",
+        System.out.println(String.format("  STORE_UPVAR   %s <- %s",
             prettyUpvar(op.a), prettyReg(op.b)));
         break;
 
       case Op.CLOSURE:
-        System.out.println(String.format("  CLOSURE      %s -> %s",
+        System.out.println(String.format("  CLOSURE       %s -> %s",
             prettyConst(op.a), prettyReg(op.b)));
         break;
 
       case Op.ADD_UPVAR:
-        System.out.println(String.format("    ADD_UPVAR  %s",
+        System.out.println(String.format("    ADD_UPVAR   %s",
             prettyReg(op.a)));
         break;
 

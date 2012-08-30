@@ -20,7 +20,7 @@ public class NameResolver implements ExprVisitor<Void> {
 
   @Override
   public void visit(AssignExpr expr, Void dummy) {
-    resolveName(expr.getName());
+    resolveName(this, expr.getName());
     expr.getValue().accept(this, dummy);
   }
   
@@ -31,34 +31,41 @@ public class NameResolver implements ExprVisitor<Void> {
   }
 
   @Override
-  public void visit(FunctionExpr expr, Void arg) {
+  public void visit(FunctionExpr expr, Void dummy) {
     // Resolve the function itself.
     new NameResolver(this).resolve(expr);
   }
 
   @Override
-  public void visit(NameExpr expr, Void arg) {
-    resolveName(expr.getName());
+  public void visit(IfExpr expr, Void dummy) {
+    expr.getCondition().accept(this, dummy);
+    expr.getThenArm().accept(this, dummy);
+    expr.getElseArm().accept(this, dummy);
+  }
+  
+  @Override
+  public void visit(NameExpr expr, Void dummy) {
+    resolveName(this, expr.getName());
   }
 
   @Override
-  public void visit(SequenceExpr sequence, Void arg) {
+  public void visit(SequenceExpr sequence, Void dummy) {
     for (Expr expr : sequence.getExpressions()) {
-      expr.accept(this, arg);
+      expr.accept(this, dummy);
     }
   }
 
   @Override
-  public void visit(StringExpr expr, Void arg) {
+  public void visit(StringExpr expr, Void dummy) {
     // Do nothing.
   }
 
   @Override
-  public void visit(VarExpr expr, Void arg) {
+  public void visit(VarExpr expr, Void dummy) {
     mLocals.add(expr.getName().getIdentifier());
     expr.getName().resolveLocal(mLocals.size() - 1);
     
-    expr.getValue().accept(this, arg);
+    expr.getValue().accept(this, dummy);
   }
 
   private NameResolver(NameResolver outerFunction) {
@@ -67,38 +74,34 @@ public class NameResolver implements ExprVisitor<Void> {
     mUpvars = new ArrayList<UpvarRef>();
   }
 
-  private void resolveName(Name name) {
-    UpvarRef result = findName(this, name);
-    
-    if (result == null) {
-      // If we got here, we couldn't find the name in any scope, so we'll
-      // assume it's global.
-      name.resolveGlobal();
-    } else if (result.isLocal()) {
-      // It is defined in the current scope, resolve it as local.
-      name.resolveLocal(result.getIndex());
-    } else {
-      // It is defined in an outer scope, so it was already resolved.
-    }
-  }
-  
   /**
    * Finds which outer scope a given name is defined in. If found, it will
    * fill chain with all of the scopes from where it was defined to this one
    * (inclusive). If the name isn't found, chain will be left empty.
    */
-  private UpvarRef findName(NameResolver function, Name name) {
+  private UpvarRef resolveName(NameResolver function, Name name) {
     // Bail if we run out of scopes.
-    if (function == null) return null;
+    if (function == null) {
+      // If we got here, we couldn't find the name in any scope, so we'll
+      // assume it's global.
+      name.resolveGlobal();
+      
+      return null;
+    }
     
     // See if the name is defined here.
     int local = function.mLocals.indexOf(name.getIdentifier());
     if (local != -1) {
+      if (function == this) {
+        // It is defined in the current scope, resolve it as local.
+        name.resolveLocal(local);
+      }
+      
       return new UpvarRef(name.getIdentifier(), true, local);
     }
     
     // Recurse upwards.
-    UpvarRef upvar = findName(function.mOuterFunction, name);
+    UpvarRef upvar = resolveName(function.mOuterFunction, name);
     
     // Just unwind if we never found the name in any scope.
     if (upvar == null) return null;

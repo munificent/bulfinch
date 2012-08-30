@@ -22,31 +22,40 @@ public class Op {
   // Returns from the function.
   // A = result reg
   
-  public static final int LOAD_GLOBAL = 4;
+  public static final int JUMP = 4;
+  // Jumps unconditionally.
+  // A = offset to jump by
+
+  public static final int JUMP_IF_FALSE = 5;
+  // Jumps if a value is falsey.
+  // A = register to test
+  // B = offset to jump by if A if falsey
+
+  public static final int LOAD_GLOBAL = 6;
   // Loads a named global into a register.
   // A = index of constant containing name
   // B = dest reg
 
-  public static final int LOAD_UPVAR = 5;
+  public static final int LOAD_UPVAR = 7;
   // Loads an upvar into a register.
   // A = index of upvar to load
   // B = dest reg
 
-  public static final int STORE_UPVAR = 6;
+  public static final int STORE_UPVAR = 8;
   // Stores a register into an upvar.
   // A = index of upvar to store
   // B = source reg
   
-  public static final int CLOSURE = 7;
+  public static final int CLOSURE = 9;
   // Creates a new closure for the given function.
   // A = index of constant containing function
   // B = dest reg
 
-  public static final int ADD_UPVAR = 8;
+  public static final int ADD_UPVAR = 10;
   // Pseudo-opcode for adding an upvar to a recently created closure.
   // A = register of variable in current function
   
-  public static final int ADD_OUTER_UPVAR = 9;
+  public static final int ADD_OUTER_UPVAR = 11;
   // Pseudo-opcode for adding an upvar in the current function to a recently
   // created closure.
   // A = index of upvar in current function
